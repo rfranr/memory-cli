@@ -70,6 +70,20 @@ pnpm run start search "Microsoft BASIC" --limit 5
 
 Search returns the best scoring indexed texts with category and metadata.
 
+### 5. Inspect database stats
+
+```bash
+pnpm run start stats
+```
+
+Or:
+
+```bash
+pnpm run start inspect
+```
+
+This prints a JSON summary of the documents and categories databases.
+
 ## Taxonomy format
 
 Example:

@@ -13,6 +13,10 @@ interface StoredCategoryRow {
   updated_at: string;
 }
 
+interface CountRow {
+  count: number;
+}
+
 export class SqliteCategoryStore implements CategoryStore {
   private db?: Database<sqlite3.Database, sqlite3.Statement>;
 
@@ -64,6 +68,12 @@ export class SqliteCategoryStore implements CategoryStore {
       }))
       .sort((left, right) => right.score - left.score)
       .slice(0, limit);
+  }
+
+  async count(): Promise<number> {
+    const db = this.ensureDb();
+    const row = await db.get<CountRow>(`SELECT count(*) AS count FROM categories`);
+    return row?.count ?? 0;
   }
 
   async close(): Promise<void> {

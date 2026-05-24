@@ -12,6 +12,7 @@ export interface CliApp {
   syncTaxonomy(command: { taxonomyFile: string }): Promise<number>;
   classify(command: { input: string; limit: number }): Promise<unknown>;
   indexDocument(command: { input: string; metadata: Metadata }): Promise<unknown>;
+  stats(): Promise<unknown>;
   search(command: { text: string; limit: number }): Promise<unknown>;
 }
 
@@ -79,6 +80,16 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
         metadata: parseMetadata(options.metadata),
       });
       console.log(JSON.stringify(result, null, 2));
+    });
+
+  program
+    .command("stats")
+    .alias("inspect")
+    .description("Show database stats for documents and categories")
+    .action(async (options: CommonOptions) => {
+      const app = await createApp(resolveCommonOptions(program, options));
+      const stats = await app.stats();
+      console.log(JSON.stringify(stats, null, 2));
     });
 
   program

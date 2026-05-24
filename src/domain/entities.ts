@@ -40,3 +40,24 @@ export interface IndexDocumentResult {
   chunks: number;
   ids: number[];
 }
+
+export interface CategoryChunkCount {
+  category: string;
+  chunks: number;
+}
+
+export interface DocumentStats {
+  chunks: number;
+  sources: number;
+  categories: number;
+  byCategory: CategoryChunkCount[];
+}
+
+export interface AppStats {
+  documentsDb: string;
+  categoriesDb: string;
+  documents: DocumentStats;
+  categories: {
+    synced: number;
+  };
+}

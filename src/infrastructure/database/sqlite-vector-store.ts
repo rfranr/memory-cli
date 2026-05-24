@@ -1,6 +1,6 @@
 import sqlite3 from "sqlite3";
 import { open, type Database } from "sqlite";
-import type { DocumentChunk, SearchMatch, TaxonomyEntry } from "../../domain/entities.js";
+import type { DocumentChunk, DocumentStats, SearchMatch, TaxonomyEntry } from "../../domain/entities.js";
 import type { VectorStore } from "../../domain/ports.js";
 import { cosineSimilarity } from "../../shared/cosine.js";
 
@@ -14,6 +14,15 @@ interface StoredRow {
   metadata_json: string;
   embedding_json: string;
   created_at: string;
+}
+
+interface CountRow {
+  count: number;
+}
+
+interface ByCategoryRow {
+  category: string;
+  chunks: number;
 }
 
 export class SqliteVectorStore implements VectorStore {
@@ -67,6 +76,23 @@ export class SqliteVectorStore implements VectorStore {
       .map((row) => this.toSearchMatch(row, embedding))
       .sort((left, right) => right.score - left.score)
       .slice(0, limit);
+  }
+
+  async stats(): Promise<DocumentStats> {
+    const db = this.ensureDb();
+    const [chunksRow, sourcesRow, categoriesRow, byCategoryRows] = await Promise.all([
+      db.get<CountRow>(`SELECT count(*) AS count FROM documents`),
+      db.get<CountRow>(`SELECT count(DISTINCT source) AS count FROM documents`),
+      db.get<CountRow>(`SELECT count(DISTINCT category) AS count FROM documents`),
+      db.all<ByCategoryRow[]>(`SELECT category, count(*) AS chunks FROM documents GROUP BY category ORDER BY chunks DESC, category ASC`),
+    ]);
+
+    return {
+      chunks: chunksRow?.count ?? 0,
+      sources: sourcesRow?.count ?? 0,
+      categories: categoriesRow?.count ?? 0,
+      byCategory: byCategoryRows.map((row) => ({ category: row.category, chunks: row.chunks })),
+    };
   }
 
   async close(): Promise<void> {
