@@ -1,7 +1,7 @@
 {
   "name": "rag-cli",
   "version": "1.0.0",
-  "description": "",
+  "description": "Experimental CLI for indexing documents with local embeddings, automatic tagging, and semantic RAG-style search.",
   "main": "dist/index.js",
   "bin": {
     "rag-cli": "dist/index.js"
