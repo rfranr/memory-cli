@@ -84,6 +84,16 @@ pnpm run start inspect
 
 This prints a JSON summary of the documents and categories databases.
 
+### 6. Find indexed chunks by filter
+
+```bash
+pnpm run start find --file machinelearning
+pnpm run start find --text pipeline
+pnpm run start find --category llms
+```
+
+You can combine filters and control pagination with `--limit` and `--offset`.
+
 ## Taxonomy format
 
 Example:

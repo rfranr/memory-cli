@@ -13,6 +13,7 @@ describe("CLI commands", () => {
       classify: vi.fn(),
       indexDocument,
       stats: vi.fn(),
+      find: vi.fn(),
       search: vi.fn(),
     }));
     const program = buildProgram(appFactory);
@@ -34,6 +35,7 @@ describe("CLI commands", () => {
       classify,
       indexDocument: vi.fn(),
       stats: vi.fn(),
+      find: vi.fn(),
       search: vi.fn(),
     }));
     const program = buildProgram(appFactory);
@@ -52,6 +54,7 @@ describe("CLI commands", () => {
       classify: vi.fn(),
       indexDocument: vi.fn(),
       stats: vi.fn(),
+      find: vi.fn(),
       search: vi.fn(),
     }));
     const program = buildProgram(appFactory);
@@ -63,37 +66,70 @@ describe("CLI commands", () => {
     expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ categories: 3 }, null, 2));
   });
 
-  it("stats prints database counts", async () => {
-    const stats = vi.fn(async () => ({
-      documentsDb: "./rag.sqlite",
-      categoriesDb: "./rag-categories.sqlite",
-      documents: { chunks: 2, sources: 1, categories: 1, byCategory: [{ category: "guitar", chunks: 2 }] },
-      categories: { synced: 4 },
+  it("find requires at least one filter", async () => {
+    const appFactory = vi.fn(async () => ({
+      syncTaxonomy: vi.fn(),
+      classify: vi.fn(),
+      indexDocument: vi.fn(),
+      stats: vi.fn(),
+      find: vi.fn(),
+      search: vi.fn(),
+    }));
+    const program = buildProgram(appFactory);
+
+    await expect(program.parseAsync(["node", "rag-cli", "find"])).rejects.toThrow(
+      "find requires at least one filter: --file, --text, or --category",
+    );
+  });
+
+  it("find prints filtered results", async () => {
+    const find = vi.fn(async () => ({
+      total: 1,
+      limit: 20,
+      offset: 0,
+      matches: [
+        {
+          id: 1,
+          source: "assets/docs/doc.txt",
+          content: "pipeline data",
+          taxonomy: {
+            category: "llms",
+            taxonomy: "Technology / AI / LLMs",
+            metadata: { fileName: "doc.txt", chunkIndex: 0 },
+          },
+        },
+      ],
     }));
     const appFactory = vi.fn(async () => ({
       syncTaxonomy: vi.fn(),
       classify: vi.fn(),
       indexDocument: vi.fn(),
-      stats,
+      stats: vi.fn(),
+      find,
       search: vi.fn(),
     }));
     const program = buildProgram(appFactory);
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    await program.parseAsync(["node", "rag-cli", "stats"]);
+    await program.parseAsync(["node", "rag-cli", "find", "--text", "pipeline"]);
 
-    expect(stats).toHaveBeenCalledTimes(1);
-    expect(logSpy).toHaveBeenCalledWith(
-      JSON.stringify(
+    expect(find).toHaveBeenCalledWith({ file: undefined, text: "pipeline", category: undefined, limit: 20, offset: 0 });
+    expect(logSpy).toHaveBeenCalledWith(JSON.stringify({
+      total: 1,
+      limit: 20,
+      offset: 0,
+      matches: [
         {
-          documentsDb: "./rag.sqlite",
-          categoriesDb: "./rag-categories.sqlite",
-          documents: { chunks: 2, sources: 1, categories: 1, byCategory: [{ category: "guitar", chunks: 2 }] },
-          categories: { synced: 4 },
+          id: 1,
+          source: "assets/docs/doc.txt",
+          content: "pipeline data",
+          taxonomy: {
+            category: "llms",
+            taxonomy: "Technology / AI / LLMs",
+            metadata: { fileName: "doc.txt", chunkIndex: 0 },
+          },
         },
-        null,
-        2,
-      ),
-    );
+      ],
+    }, null, 2));
   });
 });

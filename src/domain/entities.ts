@@ -36,6 +36,13 @@ export interface SearchMatch {
   score: number;
 }
 
+export interface FindMatch {
+  id: number;
+  source: string;
+  content: string;
+  taxonomy: TaxonomyEntry;
+}
+
 export interface IndexDocumentResult {
   chunks: number;
   ids: number[];
@@ -60,4 +67,11 @@ export interface AppStats {
   categories: {
     synced: number;
   };
+}
+
+export interface FindResult {
+  total: number;
+  limit: number;
+  offset: number;
+  matches: FindMatch[];
 }

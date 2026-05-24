@@ -18,3 +18,11 @@ export interface SearchCommand {
   text: string;
   limit: number;
 }
+
+export interface FindCommand {
+  file?: string;
+  text?: string;
+  category?: string;
+  limit: number;
+  offset: number;
+}

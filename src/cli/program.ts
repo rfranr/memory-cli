@@ -13,6 +13,7 @@ export interface CliApp {
   classify(command: { input: string; limit: number }): Promise<unknown>;
   indexDocument(command: { input: string; metadata: Metadata }): Promise<unknown>;
   stats(): Promise<unknown>;
+  find(command: { file?: string; text?: string; category?: string; limit: number; offset: number }): Promise<unknown>;
   search(command: { text: string; limit: number }): Promise<unknown>;
 }
 
@@ -24,6 +25,14 @@ interface ClassifyOptions extends CommonOptions {
 
 interface IndexOptions extends CommonOptions {
   metadata?: string;
+}
+
+interface FindOptions extends CommonOptions {
+  file?: string;
+  text?: string;
+  category?: string;
+  limit?: string;
+  offset?: string;
 }
 
 interface SearchOptions extends CommonOptions {
@@ -93,6 +102,27 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
     });
 
   program
+    .command("find")
+    .description("Filter indexed documents and chunks by file, text, or category")
+    .option("--file <value>", "Filter by source file/path")
+    .option("--text <value>", "Filter by stored text content")
+    .option("--category <value>", "Filter by category id or name")
+    .option("-l, --limit <number>", "Maximum matches", "20")
+    .option("-o, --offset <number>", "Result offset", "0")
+    .action(async (options: FindOptions) => {
+      validateFindOptions(options);
+      const app = await createApp(resolveCommonOptions(program, options));
+      const result = await app.find({
+        file: options.file,
+        text: options.text,
+        category: options.category,
+        limit: Number.parseInt(options.limit ?? "20", 10),
+        offset: Number.parseInt(options.offset ?? "0", 10),
+      });
+      console.log(JSON.stringify(result, null, 2));
+    });
+
+  program
     .command("search")
     .description("Embed text and return nearest stored occurrences sorted by similarity")
     .argument("<text>", "Search text")
@@ -124,6 +154,12 @@ export function parseMetadata(value = "{}"): Metadata {
   }
 
   return parsed as Metadata;
+}
+
+function validateFindOptions(options: FindOptions): void {
+  if (!options.file && !options.text && !options.category) {
+    throw new Error("find requires at least one filter: --file, --text, or --category");
+  }
 }
 
 async function defaultCreateApp(options: CommonOptions): Promise<CliApp> {

@@ -1,6 +1,6 @@
 import sqlite3 from "sqlite3";
 import { open, type Database } from "sqlite";
-import type { DocumentChunk, DocumentStats, SearchMatch, TaxonomyEntry } from "../../domain/entities.js";
+import type { DocumentChunk, DocumentStats, FindMatch, FindResult, SearchMatch, TaxonomyEntry } from "../../domain/entities.js";
 import type { VectorStore } from "../../domain/ports.js";
 import { cosineSimilarity } from "../../shared/cosine.js";
 
@@ -25,6 +25,14 @@ interface ByCategoryRow {
   chunks: number;
 }
 
+interface FindFilters {
+  file?: string;
+  text?: string;
+  category?: string;
+  limit: number;
+  offset: number;
+}
+
 export class SqliteVectorStore implements VectorStore {
   private db?: Database<sqlite3.Database, sqlite3.Statement>;
 
@@ -47,6 +55,7 @@ export class SqliteVectorStore implements VectorStore {
 
       CREATE INDEX IF NOT EXISTS idx_documents_category ON documents(category);
       CREATE INDEX IF NOT EXISTS idx_documents_taxonomy ON documents(taxonomy);
+      CREATE INDEX IF NOT EXISTS idx_documents_source ON documents(source);
     `);
   }
 
@@ -76,6 +85,26 @@ export class SqliteVectorStore implements VectorStore {
       .map((row) => this.toSearchMatch(row, embedding))
       .sort((left, right) => right.score - left.score)
       .slice(0, limit);
+  }
+
+  async find(filters: FindFilters): Promise<FindResult> {
+    const db = this.ensureDb();
+    const where = buildWhereClause(filters);
+    const params = buildParams(filters);
+    const totalRow = await db.get<CountRow>(`SELECT count(*) AS count FROM documents${where.sql}`, params);
+    const rows = await db.all<StoredRow[]>(
+      `SELECT * FROM documents${where.sql} ORDER BY id ASC LIMIT ? OFFSET ?`,
+      ...params,
+      filters.limit,
+      filters.offset,
+    );
+
+    return {
+      total: totalRow?.count ?? 0,
+      limit: filters.limit,
+      offset: filters.offset,
+      matches: rows.map((row) => this.toFindMatch(row)),
+    };
   }
 
   async stats(): Promise<DocumentStats> {
@@ -124,4 +153,68 @@ export class SqliteVectorStore implements VectorStore {
       score: cosineSimilarity(queryEmbedding, JSON.parse(row.embedding_json) as number[]),
     };
   }
+  private toFindMatch(row: StoredRow): FindMatch {
+    const taxonomy: TaxonomyEntry = {
+      category: row.category,
+      taxonomy: row.taxonomy,
+      description: row.description ?? undefined,
+      metadata: JSON.parse(row.metadata_json) as TaxonomyEntry["metadata"],
+    };
+
+    return {
+      id: row.id,
+      source: row.source,
+      content: row.content,
+      taxonomy,
+    };
+  }
+}
+
+function buildWhereClause(filters: FindFilters): { sql: string } {
+  const clauses = buildClauses(filters);
+  return { sql: clauses.length > 0 ? ` WHERE ${clauses.join(" AND ")}` : "" };
+}
+
+function buildClauses(filters: Pick<FindFilters, "file" | "text" | "category">): string[] {
+  const clauses: string[] = [];
+
+  if (filters.file) {
+    clauses.push(`lower(source) LIKE ? ESCAPE '\\'`);
+  }
+
+  if (filters.text) {
+    clauses.push(`lower(content) LIKE ? ESCAPE '\\'`);
+  }
+
+  if (filters.category) {
+    clauses.push(`lower(category) LIKE ? ESCAPE '\\'`);
+  }
+
+  return clauses;
+}
+
+function buildParams(filters: FindFilters): string[] {
+  const params: string[] = [];
+
+  if (filters.file) {
+    params.push(toLikePattern(filters.file));
+  }
+
+  if (filters.text) {
+    params.push(toLikePattern(filters.text));
+  }
+
+  if (filters.category) {
+    params.push(toLikePattern(filters.category));
+  }
+
+  return params;
+}
+
+function toLikePattern(value: string): string {
+  return `%${escapeLike(value.toLowerCase())}%`;
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
