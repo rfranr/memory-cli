@@ -1,8 +1,10 @@
 import sqlite3 from "sqlite3";
 import { open, type Database } from "sqlite";
+import { load as loadSqliteVec } from "sqlite-vec";
 import type { DocumentChunk, DocumentStats, FindMatch, FindResult, SearchMatch, TaxonomyEntry } from "../../domain/entities.js";
 import type { VectorStore } from "../../domain/ports.js";
-import { cosineSimilarity } from "../../shared/cosine.js";
+import type { IndexMetadata } from "../../shared/index-metadata.js";
+import { ensureIndexMetadata } from "../../shared/index-metadata.js";
 
 interface StoredRow {
   id: number;
@@ -14,6 +16,10 @@ interface StoredRow {
   metadata_json: string;
   embedding_json: string;
   created_at: string;
+}
+
+interface KnnRow extends StoredRow {
+  distance: number;
 }
 
 interface CountRow {
@@ -35,11 +41,16 @@ interface FindFilters {
 
 export class SqliteVectorStore implements VectorStore {
   private db?: Database<sqlite3.Database, sqlite3.Statement>;
+  private dimensions = 0;
 
-  constructor(private readonly filename: string) {}
+  constructor(
+    private readonly filename: string,
+    private readonly metadata: IndexMetadata,
+  ) {}
 
   async init(): Promise<void> {
     this.db = await open({ filename: this.filename, driver: sqlite3.Database });
+
     await this.db.exec(`
       CREATE TABLE IF NOT EXISTS documents (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,34 +68,83 @@ export class SqliteVectorStore implements VectorStore {
       CREATE INDEX IF NOT EXISTS idx_documents_taxonomy ON documents(taxonomy);
       CREATE INDEX IF NOT EXISTS idx_documents_source ON documents(source);
     `);
+
+    await ensureIndexMetadata(this.db, this.metadata, "documents index");
+
+    this.dimensions = parseDimensions(this.metadata);
+
+    loadSqliteVec(this.db);
+
+    await this.db.exec(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS documents_vec
+      USING vec0(embedding float[${this.dimensions}]);
+    `);
   }
 
   async add(chunk: DocumentChunk): Promise<number> {
     const db = this.ensureDb();
-    const result = await db.run(
-      `INSERT INTO documents
-        (source, content, category, taxonomy, description, metadata_json, embedding_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      chunk.source,
-      chunk.content,
-      chunk.taxonomy.category,
-      chunk.taxonomy.taxonomy,
-      chunk.taxonomy.description ?? null,
-      JSON.stringify(chunk.taxonomy.metadata),
-      JSON.stringify(chunk.embedding),
-    );
+    const embedding = normalizeEmbedding(chunk.embedding, this.dimensions);
 
-    return result.lastID ?? 0;
+    await db.exec("BEGIN");
+    try {
+      const result = await db.run(
+        `INSERT INTO documents
+          (source, content, category, taxonomy, description, metadata_json, embedding_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        chunk.source,
+        chunk.content,
+        chunk.taxonomy.category,
+        chunk.taxonomy.taxonomy,
+        chunk.taxonomy.description ?? null,
+        JSON.stringify(chunk.taxonomy.metadata),
+        JSON.stringify(chunk.embedding),
+      );
+
+      const id = result.lastID ?? 0;
+      await db.run(`INSERT INTO documents_vec(rowid, embedding) VALUES (?, vec_f32(?))`, id, JSON.stringify(embedding));
+
+      await db.exec("COMMIT");
+      return id;
+    } catch (error) {
+      await db.exec("ROLLBACK");
+      throw error;
+    }
   }
 
-  async search(embedding: number[], limit: number): Promise<SearchMatch[]> {
+  async search(queryEmbedding: number[], limit: number): Promise<SearchMatch[]> {
     const db = this.ensureDb();
-    const rows = await db.all<StoredRow[]>(`SELECT * FROM documents`);
+    const normalized = normalizeEmbedding(queryEmbedding, this.dimensions);
 
-    return rows
-      .map((row) => this.toSearchMatch(row, embedding))
-      .sort((left, right) => right.score - left.score)
-      .slice(0, limit);
+    const knn = await db.all<Array<{ rowid: number; distance: number }>>(
+      `SELECT rowid, distance
+       FROM documents_vec
+       WHERE embedding MATCH vec_f32(?)
+       ORDER BY distance ASC
+       LIMIT ?`,
+      JSON.stringify(normalized),
+      limit,
+    );
+
+    if (knn.length === 0) {
+      return [];
+    }
+
+    knn.sort((left, right) => left.distance - right.distance || left.rowid - right.rowid);
+
+    const ids = knn.map((row) => row.rowid);
+    const placeholders = ids.map(() => "?").join(",");
+    const docs = await db.all<StoredRow[]>(`SELECT * FROM documents WHERE id IN (${placeholders})`, ...ids);
+    const docsById = new Map(docs.map((row) => [row.id, row] as const));
+
+    return knn
+      .map(({ rowid, distance }) => {
+        const row = docsById.get(rowid);
+        if (!row) {
+          return undefined;
+        }
+        return this.toSearchMatch({ ...row, distance } as KnnRow);
+      })
+      .filter((match): match is SearchMatch => Boolean(match));
   }
 
   async find(filters: FindFilters): Promise<FindResult> {
@@ -137,7 +197,7 @@ export class SqliteVectorStore implements VectorStore {
     return this.db;
   }
 
-  private toSearchMatch(row: StoredRow, queryEmbedding: number[]): SearchMatch {
+  private toSearchMatch(row: KnnRow): SearchMatch {
     const taxonomy: TaxonomyEntry = {
       category: row.category,
       taxonomy: row.taxonomy,
@@ -150,9 +210,10 @@ export class SqliteVectorStore implements VectorStore {
       source: row.source,
       content: row.content,
       taxonomy,
-      score: cosineSimilarity(queryEmbedding, JSON.parse(row.embedding_json) as number[]),
+      score: l2DistanceToCosineSimilarity(row.distance),
     };
   }
+
   private toFindMatch(row: StoredRow): FindMatch {
     const taxonomy: TaxonomyEntry = {
       category: row.category,
@@ -168,6 +229,41 @@ export class SqliteVectorStore implements VectorStore {
       taxonomy,
     };
   }
+}
+
+function parseDimensions(metadata: IndexMetadata): number {
+  const raw = metadata.embedding_dimensions;
+  const value = Number.parseInt(raw ?? "", 10);
+
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error("documents index metadata is missing a valid embedding_dimensions");
+  }
+
+  return value;
+}
+
+function normalizeEmbedding(values: number[], dimensions: number): number[] {
+  if (values.length !== dimensions) {
+    throw new Error(`Embedding dimension mismatch: expected ${dimensions} values but received ${values.length}`);
+  }
+
+  let norm = 0;
+  for (const value of values) {
+    norm += value * value;
+  }
+
+  if (norm === 0) {
+    return values.slice();
+  }
+
+  const scale = 1 / Math.sqrt(norm);
+  return values.map((value) => value * scale);
+}
+
+function l2DistanceToCosineSimilarity(distance: number): number {
+  // For unit-normalized vectors: ||a-b||^2 = 2 - 2cos(a,b)  => cos = 1 - d^2/2
+  const similarity = 1 - (distance * distance) / 2;
+  return Math.max(-1, Math.min(1, similarity));
 }
 
 function buildWhereClause(filters: FindFilters): { sql: string } {

@@ -5,5 +5,5 @@ Next valuable steps would be:
 [x] - add a progress indicator when indexing a document and when sync/add categories (decision documented in docs/adr/0003-progress-indicators.md)
 [x] - add a rag-cli inspect / stats command (decision documented in docs/adr/0004-inspect-stats-command.md)
 [x] - add simple filtering/query support for indexed documents and chunks (file/text/category filters; decision documented in docs/adr/0005-find-command.md)
-[ ] - improve README with a “what problem this solves” section
-[ ] - maybe rename “RAG” slightly, because right now it is more local semantic index + taxonomy classifier than full RAG
+[x] - replace in-memory cosine scan with sqlite-vec KNN search for indexed chunks (decision documented in docs/adr/0006-sqlite-vec-knn.md)
+[ ] - add support for multiple embedding models (e.g. text-embedding-3-small, text-embedding-3-large, etc.) and allow users to specify which model to use when indexing and querying

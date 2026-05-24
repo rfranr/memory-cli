@@ -74,8 +74,15 @@ export class RagCliApp {
     categories: SqliteCategoryStore;
     embeddings: HttpEmbeddingClient;
   }> {
-    const store = new SqliteVectorStore(this.config.databasePath);
-    const categories = new SqliteCategoryStore(this.config.categoriesDatabasePath);
+    const metadata = {
+      embedding_provider: this.config.embeddingProvider,
+      embedding_url: this.config.embeddingEndpoint,
+      embedding_model: this.config.embeddingModel,
+      embedding_dimensions: String(this.config.embeddingDimensions),
+    };
+
+    const store = new SqliteVectorStore(this.config.databasePath, metadata);
+    const categories = new SqliteCategoryStore(this.config.categoriesDatabasePath, metadata);
     await Promise.all([store.init(), categories.init()]);
 
     return {
@@ -89,15 +96,29 @@ export class RagCliApp {
     store: SqliteVectorStore;
     categories: SqliteCategoryStore;
   }> {
-    const store = new SqliteVectorStore(this.config.databasePath);
-    const categories = new SqliteCategoryStore(this.config.categoriesDatabasePath);
+    const metadata = {
+      embedding_provider: this.config.embeddingProvider,
+      embedding_url: this.config.embeddingEndpoint,
+      embedding_model: this.config.embeddingModel,
+      embedding_dimensions: String(this.config.embeddingDimensions),
+    };
+
+    const store = new SqliteVectorStore(this.config.databasePath, metadata);
+    const categories = new SqliteCategoryStore(this.config.categoriesDatabasePath, metadata);
     await Promise.all([store.init(), categories.init()]);
 
     return { store, categories };
   }
 
   private async vectorStore(): Promise<{ store: SqliteVectorStore }> {
-    const store = new SqliteVectorStore(this.config.databasePath);
+    const metadata = {
+      embedding_provider: this.config.embeddingProvider,
+      embedding_url: this.config.embeddingEndpoint,
+      embedding_model: this.config.embeddingModel,
+      embedding_dimensions: String(this.config.embeddingDimensions),
+    };
+
+    const store = new SqliteVectorStore(this.config.databasePath, metadata);
     await store.init();
     return { store };
   }

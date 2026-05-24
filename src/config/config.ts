@@ -5,12 +5,18 @@ export interface AppConfig {
   databasePath: string;
   categoriesDatabasePath: string;
   embeddingEndpoint: string;
+  embeddingProvider: string;
+  embeddingModel: string;
+  embeddingDimensions: number;
 }
 
 export interface ConfigOptions {
   db?: string;
   categoriesDb?: string;
   embeddingUrl?: string;
+  embeddingProvider?: string;
+  embeddingModel?: string;
+  embeddingDimensions?: string;
   envFile?: string;
 }
 
@@ -19,10 +25,20 @@ const loadedEnvFiles = new Set<string>();
 export function buildConfig(options: ConfigOptions): AppConfig {
   loadEnvFile(options.envFile);
 
+  const embeddingDimensionsRaw = options.embeddingDimensions ?? process.env.RAG_CLI_EMBEDDING_DIMENSIONS ?? "";
+  const embeddingDimensions = Number.parseInt(embeddingDimensionsRaw, 10);
+
+  if (!Number.isFinite(embeddingDimensions) || embeddingDimensions <= 0) {
+    throw new Error("RAG_CLI_EMBEDDING_DIMENSIONS must be a positive integer");
+  }
+
   return {
     databasePath: options.db ?? process.env.RAG_CLI_DB ?? "./rag.sqlite",
     categoriesDatabasePath: options.categoriesDb ?? process.env.RAG_CLI_CATEGORIES_DB ?? "./rag-categories.sqlite",
     embeddingEndpoint: options.embeddingUrl ?? process.env.RAG_CLI_EMBEDDING_URL ?? "http://localhost:3000/embedding",
+    embeddingProvider: options.embeddingProvider ?? process.env.RAG_CLI_EMBEDDING_PROVIDER ?? "unknown",
+    embeddingModel: options.embeddingModel ?? process.env.RAG_CLI_EMBEDDING_MODEL ?? "unknown",
+    embeddingDimensions,
   };
 }
 

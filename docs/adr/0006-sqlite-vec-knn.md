@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -60,7 +60,8 @@ Search becomes:
 2. execute KNN in SQLite:
 
    - `SELECT rowid, distance FROM documents_vec ORDER BY distance LIMIT ?`
-   - add a stable tiebreaker: `ORDER BY distance, rowid`
+   - sqlite-vec `vec0` KNN queries typically only allow `ORDER BY distance`
+   - for stable ordering on ties, apply a secondary sort by `rowid` in application code after fetching the top K
 
 3. join to `documents` on `documents.id = documents_vec.rowid`
 4. return matched chunks + metadata
@@ -141,7 +142,8 @@ Negative:
   - insert into `documents_vec` using `rowid = documents.id`
   - do both inserts in a transaction
 - Replace `search()` with a KNN SQL query + join:
-  - `ORDER BY distance, rowid` for stable ordering
+  - `ORDER BY distance`
+  - apply stable tie-breaking by `rowid` in application code if needed
 - Add tests that:
   - index a few chunks
   - query and verify ordering / limiting

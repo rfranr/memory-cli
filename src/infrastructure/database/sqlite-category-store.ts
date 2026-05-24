@@ -2,6 +2,8 @@ import sqlite3 from "sqlite3";
 import { open, type Database } from "sqlite";
 import type { CategoryEntry, CategoryMatch } from "../../domain/entities.js";
 import type { CategoryStore } from "../../domain/ports.js";
+import type { IndexMetadata } from "../../shared/index-metadata.js";
+import { ensureIndexMetadata } from "../../shared/index-metadata.js";
 import { cosineSimilarity } from "../../shared/cosine.js";
 
 interface StoredCategoryRow {
@@ -20,7 +22,10 @@ interface CountRow {
 export class SqliteCategoryStore implements CategoryStore {
   private db?: Database<sqlite3.Database, sqlite3.Statement>;
 
-  constructor(private readonly filename: string) {}
+  constructor(
+    private readonly filename: string,
+    private readonly metadata: IndexMetadata,
+  ) {}
 
   async init(): Promise<void> {
     this.db = await open({ filename: this.filename, driver: sqlite3.Database });
@@ -36,6 +41,8 @@ export class SqliteCategoryStore implements CategoryStore {
 
       CREATE INDEX IF NOT EXISTS idx_categories_path ON categories(path);
     `);
+
+    await ensureIndexMetadata(this.db, this.metadata, "categories index");
   }
 
   async upsert(category: CategoryEntry, embedding: number[]): Promise<void> {

@@ -6,7 +6,12 @@ import { SqliteVectorStore } from "../src/infrastructure/database/sqlite-vector-
 
 async function makeStore() {
   const dir = await mkdtemp(join(tmpdir(), "rag-cli-find-"));
-  const store = new SqliteVectorStore(join(dir, "docs.sqlite"));
+  const store = new SqliteVectorStore(join(dir, "docs.sqlite"), {
+    embedding_provider: "test",
+    embedding_url: "http://localhost",
+    embedding_model: "test-model",
+    embedding_dimensions: "2",
+  });
   await store.init();
   return store;
 }

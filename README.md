@@ -15,7 +15,10 @@ Configure `.env`:
 ```bash
 RAG_CLI_DB=./rag.sqlite
 RAG_CLI_CATEGORIES_DB=./rag-categories.sqlite
+RAG_CLI_EMBEDDING_PROVIDER=llama.cpp
 RAG_CLI_EMBEDDING_URL=http://localhost:8080/embedding
+RAG_CLI_EMBEDDING_MODEL=granite-embedding-107m-multilingual
+RAG_CLI_EMBEDDING_DIMENSIONS=384
 ```
 
 The embedding endpoint must accept `POST /embedding`.
@@ -69,7 +72,7 @@ Example output:
 pnpm run start search "Microsoft BASIC" --limit 5
 ```
 
-Search returns the best scoring indexed texts with category and metadata.
+Search returns the best scoring indexed texts with category and metadata (KNN via sqlite-vec).
 
 ### 5. Inspect database stats
 
