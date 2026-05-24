@@ -40,10 +40,11 @@ pnpm run start classify assets/docs/doc.txt
 
 This compares the input with the already-synced categories database.
 
-### 3. Index a text or file
+### 3. Index a text, file, or URL
 
 ```bash
 pnpm run start index assets/docs/doc.txt --metadata '{"fileName":"assets/docs/doc.txt"}'
+pnpm run start index https://example.com/article --metadata '{"url":"https://example.com/article"}'
 ```
 
 This splits the document into chunks and stores each chunk in the documents database with:
