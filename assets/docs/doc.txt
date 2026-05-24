@@ -1,0 +1,9 @@
+
+more
+Today, we’re opening the vault—for real.
+
+For decades, fragments and unofficial copies of Microsoft’s 6502 BASIC have circulated online, mirrored on retrocomputing sites, and preserved in museum archives. Coders have studied the code, rebuilt it, and even run it in modern systems. Today, for the first time, we’re opening the hatch and officially releasing the code under an open-source license.
+
+Discover the newly open-sourced Microsoft 6502 BASIC code
+Microsoft’s first products: From the Altair to the Commodore 64
+Microsoft BASIC began in 1975 as the company’s very first product: a BASIC interpreter for the Intel 8080, written by Bill Gates and Paul Allen for the Altair 8800. That codebase was soon adapted to run on other 8-bit CPUs, including the MOS 6502, Motorola 6800, and 6809. You can learn more about this time and hear directly from Bill Gates on the Microsoft Learn Website’s History of Microsoft video series or by visiting Bill Gates’ blog.

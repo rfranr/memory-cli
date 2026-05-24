@@ -1,5 +1,17 @@
 export type Metadata = Record<string, string | number | boolean | null>;
 
+export interface CategoryEntry {
+  id: string;
+  path: string;
+  description?: string;
+  examples: string[];
+}
+
+export interface CategoryMatch {
+  category: CategoryEntry;
+  score: number;
+}
+
 export interface TaxonomyEntry {
   category: string;
   taxonomy: string;

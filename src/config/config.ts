@@ -3,11 +3,13 @@ import { resolve } from "node:path";
 
 export interface AppConfig {
   databasePath: string;
+  categoriesDatabasePath: string;
   embeddingEndpoint: string;
 }
 
 export interface ConfigOptions {
   db?: string;
+  categoriesDb?: string;
   embeddingUrl?: string;
   envFile?: string;
 }
@@ -19,6 +21,7 @@ export function buildConfig(options: ConfigOptions): AppConfig {
 
   return {
     databasePath: options.db ?? process.env.RAG_CLI_DB ?? "./rag.sqlite",
+    categoriesDatabasePath: options.categoriesDb ?? process.env.RAG_CLI_CATEGORIES_DB ?? "./rag-categories.sqlite",
     embeddingEndpoint: options.embeddingUrl ?? process.env.RAG_CLI_EMBEDDING_URL ?? "http://localhost:3000/embedding",
   };
 }

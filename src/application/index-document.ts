@@ -1,36 +1,35 @@
-import { readFile } from "node:fs/promises";
 import type { IndexDocumentCommand } from "../domain/commands.js";
-import type { EmbeddingClient, VectorStore } from "../domain/ports.js";
+import type { CategoryStore, EmbeddingClient, VectorStore } from "../domain/ports.js";
+import { readInput } from "./classify-document.js";
 
 export class IndexDocumentUseCase {
   constructor(
     private readonly embeddings: EmbeddingClient,
     private readonly store: VectorStore,
+    private readonly categories: CategoryStore,
   ) {}
 
   async execute(command: IndexDocumentCommand): Promise<number> {
-    const content = await readFile(command.file, "utf8");
-    const input = [
-      `Category: ${command.category}`,
-      `Taxonomy: ${command.taxonomy}`,
-      command.description ? `Description: ${command.description}` : undefined,
-      "",
-      content,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const content = await readInput(command.input);
+    const contentEmbedding = await this.embeddings.embed(content);
+    const [bestMatch] = await this.categories.search(contentEmbedding, 1);
 
-    const embedding = await this.embeddings.embed(input);
+    if (!bestMatch) {
+      throw new Error("Cannot index document: categories database is empty. Run `rag-cli categories sync <categories.yml>` first.");
+    }
 
     return this.store.add({
-      source: command.file,
+      source: command.input,
       content,
-      embedding,
+      embedding: contentEmbedding,
       taxonomy: {
-        category: command.category,
-        taxonomy: command.taxonomy,
-        description: command.description,
-        metadata: command.metadata,
+        category: bestMatch.category.id,
+        taxonomy: bestMatch.category.path,
+        description: bestMatch.category.description,
+        metadata: {
+          ...command.metadata,
+          categoryScore: bestMatch.score,
+        },
       },
     });
   }

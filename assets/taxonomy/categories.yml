@@ -1,0 +1,34 @@
+version: 1
+
+categories:
+  - id: biology
+    path: "Ciència / Biologia"
+    description: "Documents sobre éssers vius, cèl·lules, genètica, evolució i ecosistemes."
+    examples:
+      - "ADN i mutacions"
+      - "Classificació dels animals"
+      - "Funcionament de les cèl·lules"
+
+  - id: organic-chemistry
+    path: "Ciència / Química orgànica"
+    description: "Documents sobre compostos del carboni, molècules orgàniques, reaccions i grups funcionals."
+    examples:
+      - "Alcohols i aldehids"
+      - "Hidrocarburs"
+      - "Reaccions orgàniques bàsiques"
+
+  - id: software-architecture
+    path: "Tecnologia / Desenvolupament / Arquitectura"
+    description: "Notes sobre disseny de software, capes, ports, adaptadors, domini, serveis i decisions tècniques."
+    examples:
+      - "Clean Architecture"
+      - "DDD"
+      - "Separació entre domini i infraestructura"
+
+  - id: guitar
+    path: "Coses meves / Música / Guitarra"
+    description: "Materials per aprendre guitarra, acords, escales, tècnica, oïda i repertori."
+    examples:
+      - "Acords majors i menors"
+      - "Escala pentatònica"
+      - "Treure cançons d'oïda"

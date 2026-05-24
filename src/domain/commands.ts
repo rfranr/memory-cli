@@ -1,10 +1,16 @@
 import type { Metadata } from "./entities.js";
 
+export interface TaxonomySyncCommand {
+  taxonomyFile: string;
+}
+
+export interface ClassifyCommand {
+  input: string;
+  limit: number;
+}
+
 export interface IndexDocumentCommand {
-  file: string;
-  category: string;
-  taxonomy: string;
-  description?: string;
+  input: string;
   metadata: Metadata;
 }
 
