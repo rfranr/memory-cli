@@ -108,3 +108,5 @@ Search results should return content plus metadata such as:
 
 - Inspect `./src` for comments and existing conventions before changing code.
 - Keep the CLI focused on local-first taxonomy classification, indexing, and semantic search.
+- Add tests for new features and functionality. 
+- Update documentation in the README.md when necessary.
