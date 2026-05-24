@@ -1,0 +1,11 @@
+path:
+  - "Coses Meves"
+  - "Investigació"
+  - "Desenvolupament"
+
+description: >
+  Notes, idees, experiments i materials relacionats amb el desenvolupament de
+  software, arquitectura, programació, intel·ligència artificial, sistemes,
+  eines, prototips i recerca tècnica personal. Aquesta categoria agrupa
+  contingut en procés d'exploració, proves, aprenentatge o construcció,
+  incloent reflexions, snippets, documents tècnics i projectes experimentals.

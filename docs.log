@@ -1,0 +1,6 @@
+  803  wget https://huggingface.co/bartowski/granite-embedding-107m-multilingual-GGUF/resolve/main/granite-embedding-107m-multilingual-Q8_0.gguf
+  812  llama serve --embeddings --model models/granite-embedding-107m-multilingual-Q8_0.gguf &
+  813  curl -X POST "http://localhost:8080/embedding" --data '{"content":"some text to embed"}'
+
+# view
+https://medium.com/@manuelescobar-dev/achieve-state-of-the-art-llm-inference-llama-3-with-llama-cpp-c919eaeaac24
