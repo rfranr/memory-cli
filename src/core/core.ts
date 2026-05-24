@@ -8,6 +8,7 @@ import type { CategoryMatch, IndexDocumentResult, SearchMatch } from "../domain/
 import { SqliteCategoryStore } from "../infrastructure/database/sqlite-category-store.js";
 import { SqliteVectorStore } from "../infrastructure/database/sqlite-vector-store.js";
 import { HttpEmbeddingClient } from "../infrastructure/embedding/http-embedding-client.js";
+import { createStderrProgressReporter } from "../shared/progress.js";
 
 export class RagCliApp {
   constructor(private readonly config: AppConfig) {}
@@ -15,7 +16,7 @@ export class RagCliApp {
   async syncTaxonomy(command: TaxonomySyncCommand): Promise<number> {
     const { store, categories, embeddings } = await this.dependencies();
     try {
-      return await new TaxonomySyncUseCase(embeddings, categories).execute(command);
+      return await new TaxonomySyncUseCase(embeddings, categories).execute(command, createStderrProgressReporter("Syncing categories"));
     } finally {
       await Promise.all([store.close(), categories.close()]);
     }
@@ -33,7 +34,7 @@ export class RagCliApp {
   async indexDocument(command: IndexDocumentCommand): Promise<IndexDocumentResult> {
     const { store, categories, embeddings } = await this.dependencies();
     try {
-      return await new IndexDocumentUseCase(embeddings, store, categories).execute(command);
+      return await new IndexDocumentUseCase(embeddings, store, categories).execute(command, createStderrProgressReporter("Indexing chunks"));
     } finally {
       await Promise.all([store.close(), categories.close()]);
     }

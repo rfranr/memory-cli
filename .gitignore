@@ -1,6 +1,7 @@
 node_modules/
 models/
 dist/
+assets/docs
 categories.*.yml
 *.sqlite
 .env

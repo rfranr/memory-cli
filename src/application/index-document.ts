@@ -1,6 +1,7 @@
 import type { IndexDocumentCommand } from "../domain/commands.js";
 import type { IndexDocumentResult } from "../domain/entities.js";
 import type { CategoryStore, EmbeddingClient, VectorStore } from "../domain/ports.js";
+import { noopProgressReporter, type ProgressReporter } from "../shared/progress.js";
 import { chunkText } from "../shared/chunk-text.js";
 import { readInput } from "./classify-document.js";
 
@@ -11,7 +12,7 @@ export class IndexDocumentUseCase {
     private readonly categories: CategoryStore,
   ) {}
 
-  async execute(command: IndexDocumentCommand): Promise<IndexDocumentResult> {
+  async execute(command: IndexDocumentCommand, progress: ProgressReporter = noopProgressReporter): Promise<IndexDocumentResult> {
     const content = await readInput(command.input);
     const chunks = chunkText(content);
 
@@ -19,7 +20,10 @@ export class IndexDocumentUseCase {
       throw new Error("Cannot index document: input did not contain any non-empty chunks");
     }
 
+    progress.start(chunks.length);
+
     const ids: number[] = [];
+    let processed = 0;
 
     for (const chunk of chunks) {
       const chunkEmbedding = await this.embeddings.embed(chunk.content);
@@ -49,7 +53,11 @@ export class IndexDocumentUseCase {
           },
         }),
       );
+      processed += 1;
+      progress.update(processed, chunks.length);
     }
+
+    progress.done(chunks.length);
 
     return {
       chunks: chunks.length,
