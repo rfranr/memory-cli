@@ -1,5 +1,5 @@
 import type { IndexDocumentCommand } from "../domain/commands.js";
-import type { IndexDocumentResult } from "../domain/entities.js";
+import type { DocumentChunk, IndexDocumentResult } from "../domain/entities.js";
 import type { CategoryStore, EmbeddingClient, VectorStore } from "../domain/ports.js";
 import { noopProgressReporter, type ProgressReporter } from "../shared/progress.js";
 import { chunkText } from "../shared/chunk-text.js";
@@ -22,7 +22,8 @@ export class IndexDocumentUseCase {
 
     progress.start(chunks.length);
 
-    const ids: number[] = [];
+    const chunksToInsert: DocumentChunk[] = [];
+
     let processed = 0;
 
     for (const chunk of chunks) {
@@ -33,29 +34,30 @@ export class IndexDocumentUseCase {
         throw new Error("Cannot index document: categories database is empty. Run `rag-cli categories sync <categories.yml>` first.");
       }
 
-      ids.push(
-        await this.store.add({
-          source: command.input,
-          content: chunk.content,
-          embedding: chunkEmbedding,
-          taxonomy: {
-            category: bestMatch.category.id,
-            taxonomy: bestMatch.category.path,
-            description: bestMatch.category.description,
-            metadata: {
-              ...command.metadata,
-              chunkIndex: chunk.chunkIndex,
-              chunkCount: chunk.chunkCount,
-              chunkStart: chunk.chunkStart,
-              chunkEnd: chunk.chunkEnd,
-              categoryScore: bestMatch.score,
-            },
+      chunksToInsert.push({
+        source: command.input,
+        content: chunk.content,
+        embedding: chunkEmbedding,
+        taxonomy: {
+          category: bestMatch.category.id,
+          taxonomy: bestMatch.category.path,
+          description: bestMatch.category.description,
+          metadata: {
+            ...command.metadata,
+            chunkIndex: chunk.chunkIndex,
+            chunkCount: chunk.chunkCount,
+            chunkStart: chunk.chunkStart,
+            chunkEnd: chunk.chunkEnd,
+            categoryScore: bestMatch.score,
           },
-        }),
-      );
+        },
+      });
+
       processed += 1;
       progress.update(processed, chunks.length);
     }
+
+    const ids = await this.store.addMany(chunksToInsert);
 
     progress.done(chunks.length);
 

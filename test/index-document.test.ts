@@ -36,7 +36,17 @@ function makeVectorStore() {
       records.push(chunk);
       return records.length;
     }),
+    addMany: vi.fn(async (chunks: SearchMatch[]) => {
+      const ids: number[] = [];
+      for (const chunk of chunks) {
+        records.push(chunk);
+        ids.push(records.length);
+      }
+      return ids;
+    }),
     search: vi.fn(),
+    find: vi.fn(),
+    stats: vi.fn(),
     close: vi.fn(async () => {}),
   };
 }
@@ -57,11 +67,18 @@ describe("IndexDocumentUseCase", () => {
     const storeRecords: Array<unknown> = [];
     const store = {
       init: vi.fn(async () => {}),
-      add: vi.fn(async (chunk: any) => {
-        storeRecords.push(chunk);
-        return storeRecords.length;
+      add: vi.fn(),
+      addMany: vi.fn(async (chunks: any[]) => {
+        const ids: number[] = [];
+        for (const chunk of chunks) {
+          storeRecords.push(chunk);
+          ids.push(storeRecords.length);
+        }
+        return ids;
       }),
       search: vi.fn(),
+      find: vi.fn(),
+      stats: vi.fn(),
       close: vi.fn(async () => {}),
     };
 
@@ -74,7 +91,7 @@ describe("IndexDocumentUseCase", () => {
     expect(result).toEqual({ chunks: 2, ids: [1, 2] });
     expect(embeddings.embed).toHaveBeenCalledTimes(2);
     expect(categories.search).toHaveBeenCalledTimes(2);
-    expect(store.add).toHaveBeenCalledTimes(2);
+    expect(store.addMany).toHaveBeenCalledTimes(1);
     expect(embeddings.inputs).toEqual(["First paragraph.", "Second paragraph."]);
 
     expect(storeRecords[0]).toMatchObject({
@@ -115,7 +132,10 @@ describe("IndexDocumentUseCase", () => {
     const store = {
       init: vi.fn(async () => {}),
       add: vi.fn(),
+      addMany: vi.fn(),
       search: vi.fn(),
+      find: vi.fn(),
+      stats: vi.fn(),
       close: vi.fn(async () => {}),
     };
 

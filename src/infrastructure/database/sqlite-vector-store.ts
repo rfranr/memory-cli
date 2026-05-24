@@ -82,29 +82,39 @@ export class SqliteVectorStore implements VectorStore {
   }
 
   async add(chunk: DocumentChunk): Promise<number> {
+    const [id] = await this.addMany([chunk]);
+    return id ?? 0;
+  }
+
+  async addMany(chunks: DocumentChunk[]): Promise<number[]> {
     const db = this.ensureDb();
-    const embedding = normalizeEmbedding(chunk.embedding, this.dimensions);
+    const ids: number[] = [];
 
     await db.exec("BEGIN");
     try {
-      const result = await db.run(
-        `INSERT INTO documents
-          (source, content, category, taxonomy, description, metadata_json, embedding_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        chunk.source,
-        chunk.content,
-        chunk.taxonomy.category,
-        chunk.taxonomy.taxonomy,
-        chunk.taxonomy.description ?? null,
-        JSON.stringify(chunk.taxonomy.metadata),
-        JSON.stringify(chunk.embedding),
-      );
+      for (const chunk of chunks) {
+        const embedding = normalizeEmbedding(chunk.embedding, this.dimensions);
 
-      const id = result.lastID ?? 0;
-      await db.run(`INSERT INTO documents_vec(rowid, embedding) VALUES (?, vec_f32(?))`, id, JSON.stringify(embedding));
+        const result = await db.run(
+          `INSERT INTO documents
+            (source, content, category, taxonomy, description, metadata_json, embedding_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          chunk.source,
+          chunk.content,
+          chunk.taxonomy.category,
+          chunk.taxonomy.taxonomy,
+          chunk.taxonomy.description ?? null,
+          JSON.stringify(chunk.taxonomy.metadata),
+          JSON.stringify(chunk.embedding),
+        );
+
+        const id = result.lastID ?? 0;
+        ids.push(id);
+        await db.run(`INSERT INTO documents_vec(rowid, embedding) VALUES (?, vec_f32(?))`, id, JSON.stringify(embedding));
+      }
 
       await db.exec("COMMIT");
-      return id;
+      return ids;
     } catch (error) {
       await db.exec("ROLLBACK");
       throw error;
