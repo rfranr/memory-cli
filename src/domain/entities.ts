@@ -35,3 +35,8 @@ export interface SearchMatch {
   taxonomy: TaxonomyEntry;
   score: number;
 }
+
+export interface IndexDocumentResult {
+  chunks: number;
+  ids: number[];
+}

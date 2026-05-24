@@ -46,11 +46,21 @@ This compares the input with the already-synced categories database.
 pnpm run start index assets/docs/doc.txt --metadata '{"fileName":"assets/docs/doc.txt"}'
 ```
 
-This stores the document in the documents database with:
+This splits the document into chunks and stores each chunk in the documents database with:
 
-- document embedding
+- chunk embedding
 - best matching category
 - user metadata
+- chunk metadata such as `chunkIndex`, `chunkCount`, `chunkStart`, and `chunkEnd`
+
+Example output:
+
+```json
+{
+  "chunks": 3,
+  "ids": [1, 2, 3]
+}
+```
 
 ### 4. Search indexed documents
 

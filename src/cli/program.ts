@@ -68,11 +68,11 @@ export function buildProgram(): Command {
     .action(async (input: string, options: IndexOptions) => {
       const { createApp } = await import("../core/core.js");
       const app = createApp(resolveCommonOptions(program, options));
-      const id = await app.indexDocument({
+      const result = await app.indexDocument({
         input,
         metadata: parseMetadata(options.metadata),
       });
-      console.log(JSON.stringify({ id }, null, 2));
+      console.log(JSON.stringify(result, null, 2));
     });
 
   program

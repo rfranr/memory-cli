@@ -4,7 +4,7 @@ import { SearchDocumentsUseCase } from "../application/search-documents.js";
 import { TaxonomySyncUseCase } from "../application/taxonomy-sync.js";
 import { buildConfig, type AppConfig, type ConfigOptions } from "../config/config.js";
 import type { ClassifyCommand, IndexDocumentCommand, SearchCommand, TaxonomySyncCommand } from "../domain/commands.js";
-import type { CategoryMatch, SearchMatch } from "../domain/entities.js";
+import type { CategoryMatch, IndexDocumentResult, SearchMatch } from "../domain/entities.js";
 import { SqliteCategoryStore } from "../infrastructure/database/sqlite-category-store.js";
 import { SqliteVectorStore } from "../infrastructure/database/sqlite-vector-store.js";
 import { HttpEmbeddingClient } from "../infrastructure/embedding/http-embedding-client.js";
@@ -30,7 +30,7 @@ export class RagCliApp {
     }
   }
 
-  async indexDocument(command: IndexDocumentCommand): Promise<number> {
+  async indexDocument(command: IndexDocumentCommand): Promise<IndexDocumentResult> {
     const { store, categories, embeddings } = await this.dependencies();
     try {
       return await new IndexDocumentUseCase(embeddings, store, categories).execute(command);
