@@ -1,12 +1,21 @@
 import { Command } from "commander";
 import type { Metadata } from "../domain/entities.js";
 
-interface CommonOptions {
+export interface CommonOptions {
   db?: string;
   categoriesDb?: string;
   embeddingUrl?: string;
   envFile?: string;
 }
+
+export interface CliApp {
+  syncTaxonomy(command: { taxonomyFile: string }): Promise<number>;
+  classify(command: { input: string; limit: number }): Promise<unknown>;
+  indexDocument(command: { input: string; metadata: Metadata }): Promise<unknown>;
+  search(command: { text: string; limit: number }): Promise<unknown>;
+}
+
+export type AppFactory = (options: CommonOptions) => Promise<CliApp> | CliApp;
 
 interface ClassifyOptions extends CommonOptions {
   limit?: string;
@@ -20,7 +29,7 @@ interface SearchOptions extends CommonOptions {
   limit?: string;
 }
 
-export function buildProgram(): Command {
+export function buildProgram(createApp: AppFactory = defaultCreateApp): Command {
   const program = new Command();
 
   program
@@ -39,8 +48,7 @@ export function buildProgram(): Command {
     .description("Read the source-of-truth categories.yml and upsert category embeddings")
     .argument("<taxonomy-file>", "Taxonomy YAML file, for example assets/taxonomy/categories.yml")
     .action(async (taxonomyFile: string, options: CommonOptions) => {
-      const { createApp } = await import("../core/core.js");
-      const app = createApp(resolveCommonOptions(program, options));
+      const app = await createApp(resolveCommonOptions(program, options));
       const count = await app.syncTaxonomy({ taxonomyFile });
       console.log(JSON.stringify({ categories: count }, null, 2));
     });
@@ -51,8 +59,7 @@ export function buildProgram(): Command {
     .argument("<input>", "Text to classify, or a file path")
     .option("-l, --limit <number>", "Maximum category matches", "5")
     .action(async (input: string, options: ClassifyOptions) => {
-      const { createApp } = await import("../core/core.js");
-      const app = createApp(resolveCommonOptions(program, options));
+      const app = await createApp(resolveCommonOptions(program, options));
       const matches = await app.classify({
         input,
         limit: Number.parseInt(options.limit ?? "5", 10),
@@ -66,8 +73,7 @@ export function buildProgram(): Command {
     .argument("<input>", "Text to index, or a file path")
     .option("-m, --metadata <json>", "Additional JSON metadata", "{}")
     .action(async (input: string, options: IndexOptions) => {
-      const { createApp } = await import("../core/core.js");
-      const app = createApp(resolveCommonOptions(program, options));
+      const app = await createApp(resolveCommonOptions(program, options));
       const result = await app.indexDocument({
         input,
         metadata: parseMetadata(options.metadata),
@@ -81,8 +87,7 @@ export function buildProgram(): Command {
     .argument("<text>", "Search text")
     .option("-l, --limit <number>", "Maximum matches", "10")
     .action(async (text: string, options: SearchOptions) => {
-      const { createApp } = await import("../core/core.js");
-      const app = createApp(resolveCommonOptions(program, options));
+      const app = await createApp(resolveCommonOptions(program, options));
       const matches = await app.search({ text, limit: Number.parseInt(options.limit ?? "10", 10) });
       console.log(JSON.stringify(matches, null, 2));
     });
@@ -100,7 +105,7 @@ function resolveCommonOptions(program: Command, options: CommonOptions): CommonO
   };
 }
 
-function parseMetadata(value = "{}"): Metadata {
+export function parseMetadata(value = "{}"): Metadata {
   const parsed = JSON.parse(value) as unknown;
 
   if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
@@ -108,4 +113,9 @@ function parseMetadata(value = "{}"): Metadata {
   }
 
   return parsed as Metadata;
+}
+
+async function defaultCreateApp(options: CommonOptions): Promise<CliApp> {
+  const { createApp } = await import("../core/core.js");
+  return createApp(options) as unknown as CliApp;
 }
