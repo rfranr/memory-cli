@@ -83,20 +83,22 @@ describe("IndexDocumentUseCase", () => {
     };
 
     const useCase = new IndexDocumentUseCase(embeddings as never, store as never, categories as never);
+    const input = "First paragraph.\n\nSecond paragraph.";
     const result = await useCase.execute({
-      input: "First paragraph.\n\nSecond paragraph.",
+      input,
       metadata: { fileName: "doc.txt", location: "note" } as Metadata,
     });
 
-    expect(result).toEqual({ chunks: 2, ids: [1, 2] });
-    expect(embeddings.embed).toHaveBeenCalledTimes(2);
-    expect(categories.search).toHaveBeenCalledTimes(2);
+    // Default chunking merges small paragraphs into a larger chunk.
+    expect(result).toEqual({ chunks: 1, ids: [1] });
+    expect(embeddings.embed).toHaveBeenCalledTimes(1);
+    expect(categories.search).toHaveBeenCalledTimes(1);
     expect(store.addMany).toHaveBeenCalledTimes(1);
-    expect(embeddings.inputs).toEqual(["First paragraph.", "Second paragraph."]);
+    expect(embeddings.inputs).toEqual([input]);
 
     expect(storeRecords[0]).toMatchObject({
-      source: "First paragraph.\n\nSecond paragraph.",
-      content: "First paragraph.",
+      source: input,
+      content: input,
       taxonomy: {
         category: "software-architecture",
         taxonomy: "Tecnologia / Desenvolupament / Arquitectura",
@@ -105,21 +107,9 @@ describe("IndexDocumentUseCase", () => {
           fileName: "doc.txt",
           location: "note",
           chunkIndex: 0,
-          chunkCount: 2,
+          chunkCount: 1,
           chunkStart: expect.any(Number),
           chunkEnd: expect.any(Number),
-          categoryScore: 0.84,
-        },
-      },
-    });
-    expect(storeRecords[1]).toMatchObject({
-      content: "Second paragraph.",
-      taxonomy: {
-        metadata: {
-          fileName: "doc.txt",
-          location: "note",
-          chunkIndex: 1,
-          chunkCount: 2,
           categoryScore: 0.84,
         },
       },
