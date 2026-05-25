@@ -1,34 +1,412 @@
 version: 1
 
 categories:
-  - id: biology
-    path: "Ciència / Biologia"
-    description: "Documents sobre éssers vius, cèl·lules, genètica, evolució i ecosistemes."
+  # ==========================================
+  # CIÈNCIA
+  # ==========================================
+  
+  # ----- Ciències Formals -----
+  - id: matematiques
+    path: "Ciència / Ciències Formals / Matemàtiques"
+    description: "Estudi de nombres, estructures, espais i canvis mitjançant demostracions formals"
     examples:
-      - "ADN i mutacions"
-      - "Classificació dels animals"
-      - "Funcionament de les cèl·lules"
+      - "Àlgebra lineal i matrius"
+      - "Càlcul diferencial i integral"
+      - "Teoria de conjunts i lògica"
+      - "Geometria euclidiana i no euclidiana"
 
-  - id: organic-chemistry
-    path: "Ciència / Química orgànica"
-    description: "Documents sobre compostos del carboni, molècules orgàniques, reaccions i grups funcionals."
+  - id: estadistica
+    path: "Ciència / Ciències Formals / Estadística"
+    description: "Recollida, anàlisi, interpretació i presentació de dades"
     examples:
-      - "Alcohols i aldehids"
-      - "Hidrocarburs"
-      - "Reaccions orgàniques bàsiques"
+      - "Distribucions de probabilitat"
+      - "Regressió lineal"
+      - "Test d'hipòtesis"
+      - "Anàlisi de variància (ANOVA)"
 
-  - id: software-architecture
-    path: "Tecnologia / Desenvolupament / Arquitectura"
-    description: "Notes sobre disseny de software, capes, ports, adaptadors, domini, serveis i decisions tècniques."
+  # ----- Ciències Naturals -----
+  - id: fisica
+    path: "Ciència / Ciències Naturals / Física"
+    description: "Lleis fonamentals de la matèria, energia, espai i temps"
+    examples:
+      - "Mecànica quàntica"
+      - "Relativitat general i especial"
+      - "Termodinàmica i mecànica estadística"
+      - "Electromagnetisme"
+
+  - id: quimica
+    path: "Ciència / Ciències Naturals / Química"
+    description: "Composició, estructura i propietats de la matèria i les seves transformacions"
+    examples:
+      - "Enllaços químics"
+      - "Reaccions orgàniques"
+      - "Taula periòdica"
+      - "Cinètica química"
+
+  - id: biologia
+    path: "Ciència / Ciències Naturals / Biologia"
+    description: "Estudi dels éssers vius, cèl·lules, genètica, evolució i ecosistemes"
+    examples:
+      - "Taxonomia i classificació d'espècies"
+      - "Estructura de l'ADN i mutacions"
+      - "Fotosíntesi i metabolisme"
+      - "Crustacis, mol·luscs i artròpodes"
+
+  - id: zoologia
+    path: "Ciència / Ciències Naturals / Biologia / Zoologia"
+    description: "Classificació, anatomia, fisiologia i comportament dels animals"
+    examples:
+      - "Crustacis decàpodes (gambes, crancs, llamàntols)"
+      - "Aus rapinyaires"
+      - "Mamífers marins"
+      - "Rèptils i amfibis"
+
+  - id: botanica
+    path: "Ciència / Ciències Naturals / Biologia / Botànica"
+    description: "Estudi de les plantes, algues i fongs"
+    examples:
+      - "Fotosíntesi"
+      - "Anatomia vegetal"
+      - "Classificació d'espècies"
+      - "Pol·linització"
+
+  - id: genetica
+    path: "Ciència / Ciències Naturals / Biologia / Genètica"
+    description: "Herència, variació genètica i expressió gènica"
+    examples:
+      - "Lleis de Mendel"
+      - "Edició genètica CRISPR"
+      - "Seqüenciació d'ADN"
+      - "Malalties hereditàries"
+
+  - id: ecologia
+    path: "Ciència / Ciències Naturals / Biologia / Ecologia"
+    description: "Relacions entre organismes i el seu entorn"
+    examples:
+      - "Cadenes tròfiques"
+      - "Cicles biogeoquímics"
+      - "Canvi climàtic"
+      - "Conservació d'espècies"
+
+  - id: astronomia
+    path: "Ciència / Ciències Naturals / Astronomia"
+    description: "Estudi dels cossos celestes, l'univers i els fenòmens astronòmics"
+    examples:
+      - "Formació d'estrelles"
+      - "Planetes del sistema solar"
+      - "Forats negres"
+      - "Cosmologia"
+
+  - id: geologia
+    path: "Ciència / Ciències Naturals / Geologia"
+    description: "Estructura, composició i història de la Terra"
+    examples:
+      - "Tectònica de plaques"
+      - "Minerals i roques"
+      - "Erosió i sediments"
+      - "Fòssils"
+
+  # ----- Ciències Socials -----
+  - id: economia
+    path: "Ciència / Ciències Socials / Economia"
+    description: "Producció, distribució i consum de béns i serveis"
+    examples:
+      - "Mercat de valors i borsa"
+      - "Oferta i demanda"
+      - "Política monetària i fiscal"
+      - "Microeconomia i macroeconomia"
+
+  - id: finances
+    path: "Ciència / Ciències Socials / Economia / Finances"
+    description: "Gestió de diners, inversions, riscos i actius financers"
+    examples:
+      - "Opcions financeres (calls i puts)"
+      - "Warrants i derivats"
+      - "Anàlisi tècnica de triangles i banderes"
+      - "Carteres d'inversió"
+
+  - id: sociologia
+    path: "Ciència / Ciències Socials / Sociologia"
+    description: "Estructures, relacions i canvis socials"
+    examples:
+      - "Classes socials"
+      - "Urbanització i ciutats"
+      - "Moviments socials"
+      - "Desigualtat i gènere"
+
+  - id: psicologia
+    path: "Ciència / Ciències Socials / Psicologia"
+    description: "Estudi de la ment, comportament i processos cognitius"
+    examples:
+      - "Psicologia cognitiva"
+      - "Teràpies conductuals"
+      - "Desenvolupament infantil"
+      - "Neuropsicologia"
+
+  - id: antropologia
+    path: "Ciència / Ciències Socials / Antropologia"
+    description: "Estudi de la humanitat, cultures i evolució social"
+    examples:
+      - "Antropologia cultural"
+      - "Evolució humana"
+      - "Etnografia"
+      - "Rituals i creences"
+
+  # ==========================================
+  # TECNOLOGIA
+  # ==========================================
+  
+  - id: enginyeria
+    path: "Tecnologia / Enginyeria"
+    description: "Aplicació de coneixements científics per dissenyar solucions pràctiques"
+    examples:
+      - "Enginyeria civil (ponts, edificis)"
+      - "Enginyeria mecànica"
+      - "Enginyeria elèctrica"
+      - "Enginyeria química"
+
+  - id: informatica
+    path: "Tecnologia / Informàtica"
+    description: "Estudi i desenvolupament de sistemes computacionals i algorismes"
+    examples:
+      - "Programació"
+      - "Arquitectura de computadors"
+      - "Xarxes i comunicacions"
+      - "Bases de dades"
+
+  - id: programacio
+    path: "Tecnologia / Informàtica / Programació"
+    description: "Escriptura de codi, llenguatges i paradigmes de programació"
+    examples:
+      - "Tipus i variables"
+      - "Programació orientada a objectes"
+      - "Funcions pures en programació funcional"
+      - "TypeScript vs JavaScript"
+
+  - id: arquitectura-programari
+    path: "Tecnologia / Informàtica / Arquitectura de programari"
+    description: "Disseny de sistemes, patrons i decisions estructurals"
     examples:
       - "Clean Architecture"
-      - "DDD"
-      - "Separació entre domini i infraestructura"
+      - "Domain-Driven Design (DDD)"
+      - "Microserveis"
+      - "Hexagonal architecture"
 
-  - id: guitar
-    path: "Coses meves / Música / Guitarra"
-    description: "Materials per aprendre guitarra, acords, escales, tècnica, oïda i repertori."
+  - id: intel-ligencia-artificial
+    path: "Tecnologia / Informàtica / Intel·ligència Artificial"
+    description: "Sistemes que imiten intel·ligència humana"
     examples:
+      - "Xarxes neuronals"
+      - "Processament del llenguatge natural"
+      - "Sistemes de recomanació"
+      - "RAG i embeddings"
+
+  - id: machine-learning
+    path: "Tecnologia / Informàtica / Intel·ligència Artificial / Machine Learning"
+    description: "Algorismes que aprenen de dades"
+    examples:
+      - "Regressió i classificació"
+      - "Clustering (k-means)"
+      - "Xarxes neuronals profundes"
+      - "Gradient descent"
+
+  - id: ciencia-dades
+    path: "Tecnologia / Informàtica / Ciència de dades"
+    description: "Extracció de coneixement de dades mitjançant estadística i ML"
+    examples:
+      - "Anàlisi exploratori de dades"
+      - "Visualització de dades"
+      - "Big data (Spark, Hadoop)"
+      - "Enginyeria de features"
+
+  - id: bases-dades
+    path: "Tecnologia / Informàtica / Bases de dades"
+    description: "Emmagatzematge, consulta i gestió de dades estructurades"
+    examples:
+      - "SQL vs NoSQL"
+      - "Optimització de consultes"
+      - "Transaccions ACID"
+      - "sqlite-vec per cerca vectorial"
+
+  - id: xarxes
+    path: "Tecnologia / Informàtica / Xarxes"
+    description: "Comunicació entre dispositius i protocols"
+    examples:
+      - "TCP/IP"
+      - "HTTP/HTTPS"
+      - "DNS i DHCP"
+      - "Seguretat de xarxa"
+
+  - id: ciberseguretat
+    path: "Tecnologia / Informàtica / Ciberseguretat"
+    description: "Protecció de sistemes, xarxes i dades contra atacs"
+    examples:
+      - "Xifratge i criptografia"
+      - "Autenticació i autorització"
+      - "Pentesting"
+      - "Polítiques de seguretat"
+
+  # ==========================================
+  # ARTS I HUMANITATS
+  # ==========================================
+  
+  - id: filosofia
+    path: "Arts i Humanitats / Filosofia"
+    description: "Estudi de la realitat, l'existència, el coneixement i l'ètica"
+    examples:
+      - "Ètica i moral"
+      - "Epistemologia (teoria del coneixement)"
+      - "Metafísica"
+      - "Filosofia política"
+
+  - id: historia
+    path: "Arts i Humanitats / Història"
+    description: "Estudi dels esdeveniments passats de la humanitat"
+    examples:
+      - "Història antiga (Grècia, Roma)"
+      - "Edat Mitjana"
+      - "Edat Moderna"
+      - "Segona Guerra Mundial"
+
+  - id: literatura
+    path: "Arts i Humanitats / Literatura"
+    description: "Art de l'expressió escrita en prosa, vers o drama"
+    examples:
+      - "Narrativa (novel·la, conte)"
+      - "Poesia lírica"
+      - "Teatre i dramaturgia"
+      - "Gèneres literaris"
+
+  - id: linguistica
+    path: "Arts i Humanitats / Lingüística"
+    description: "Estudi científic del llenguatge humà"
+    examples:
+      - "Fonètica i fonologia"
+      - "Morfologia i sintaxi"
+      - "Semàntica i pragmàtica"
+      - "Sociolingüística"
+
+  - id: musica
+    path: "Arts i Humanitats / Música"
+    description: "Art de combinar sons i silencis en el temps"
+    examples:
+      - "Teoria musical (escales, acords)"
+      - "Història de la música"
+      - "Gèneres musicals"
+      - "Tècnica d'instruments"
+
+  - id: teoria-musical
+    path: "Arts i Humanitats / Música / Teoria musical"
+    description: "Fonaments de l'harmonia, ritme i melodia"
+    examples:
+      - "Escales diatòniques i pentatòniques"
       - "Acords majors i menors"
-      - "Escala pentatònica"
-      - "Treure cançons d'oïda"
+      - "Contrapunt"
+      - "Lectura de partitures"
+
+  - id: arts-visuals
+    path: "Arts i Humanitats / Arts visuals"
+    description: "Creació artística basada en l'estímul visual"
+    examples:
+      - "Pintura (oli, acrílic, aquarel·la)"
+      - "Escultura"
+      - "Fotografia"
+      - "Arquitectura"
+
+  - id: arts-esceniques
+    path: "Arts i Humanitats / Arts escèniques"
+    description: "Art representat en un escenari"
+    examples:
+      - "Teatre"
+      - "Dansa i ballet"
+      - "Òpera"
+      - "Circ"
+
+  - id: religio
+    path: "Arts i Humanitats / Religió"
+    description: "Sistemes de creences, rituals i espiritualitat"
+    examples:
+      - "Cristianisme"
+      - "Islam"
+      - "Budisme"
+      - "Mitologies antigues"
+
+  # ==========================================
+  # GEOGRAFIA I HISTÒRIA
+  # ==========================================
+  
+  - id: geografia-fisica
+    path: "Geografia i Història / Geografia física"
+    description: "Estudi dels fenòmens naturals de la superfície terrestre"
+    examples:
+      - "Climatologia"
+      - "Hidrografia (rius, oceans)"
+      - "Relleu i orografia"
+      - "Ecosistemes terrestres"
+
+  - id: geografia-humana
+    path: "Geografia i Història / Geografia humana"
+    description: "Relació entre societats humanes i el seu entorn"
+    examples:
+      - "Distribució de la població"
+      - "Urbanisme"
+      - "Geografia econòmica"
+      - "Migracions"
+
+  # ==========================================
+  # VIDA PRÀCTICA
+  # ==========================================
+  
+  - id: salut
+    path: "Vida pràctica / Salut i benestar"
+    description: "Manteniment de la salut física i mental"
+    examples:
+      - "Medicina preventiva"
+      - "Nutrició i dietètica"
+      - "Exercici físic"
+      - "Salut mental"
+
+  - id: esports
+    path: "Vida pràctica / Esports i jocs"
+    description: "Activitats físiques i jocs competitius o recreatius"
+    examples:
+      - "Futbol, bàsquet, tennis"
+      - "Atletisme"
+      - "Escacs"
+      - "Jocs de taula"
+
+  - id: cuina
+    path: "Vida pràctica / Cuina i gastronomia"
+    description: "Preparació d'aliments i tècniques culinàries"
+    examples:
+      - "Receptes bàsiques"
+      - "Cuina mediterrània"
+      - "Fornejat"
+      - "Maridatge de vins"
+
+  - id: jardineria
+    path: "Vida pràctica / Jardineria"
+    description: "Cultiu de plantes i manteniment d'espais verds"
+    examples:
+      - "Cura d'hort"
+      - "Poda i reg"
+      - "Tipus de terra"
+      - "Plantes d'interior"
+
+  - id: bricolatge
+    path: "Vida pràctica / Bricolatge i reparacions"
+    description: "Reparacions i construcció d'objectes a casa"
+    examples:
+      - "Electricitat domèstica"
+      - "Fusteria bàsica"
+      - "Pintura d'interiors"
+      - "Manteniment d'eines"
+
+  - id: finances-personals
+    path: "Vida pràctica / Finances personals"
+    description: "Gestió de diners a nivell individual o familiar"
+    examples:
+      - "Pressupostos"
+      - "Estalvi i inversió"
+      - "Préstecs i hipoteques"
+      - "Planificació de jubilació"
