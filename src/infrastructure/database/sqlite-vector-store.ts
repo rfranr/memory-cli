@@ -1,7 +1,14 @@
 import sqlite3 from "sqlite3";
 import { open, type Database } from "sqlite";
 import { load as loadSqliteVec } from "sqlite-vec";
-import type { DocumentChunk, DocumentStats, FindMatch, FindResult, SearchMatch, TaxonomyEntry } from "../../domain/entities.js";
+import type {
+  DocumentChunk,
+  DocumentStats,
+  FindMatch,
+  FindResult,
+  SearchMatch,
+  TaxonomyEntry,
+} from "../../domain/entities.js";
 import type { VectorStore } from "../../domain/ports.js";
 import type { IndexMetadata } from "../../shared/index-metadata.js";
 import { ensureIndexMetadata } from "../../shared/index-metadata.js";
@@ -110,7 +117,11 @@ export class SqliteVectorStore implements VectorStore {
 
         const id = result.lastID ?? 0;
         ids.push(id);
-        await db.run(`INSERT INTO documents_vec(rowid, embedding) VALUES (?, vec_f32(?))`, id, JSON.stringify(embedding));
+        await db.run(
+          `INSERT INTO documents_vec(rowid, embedding) VALUES (?, vec_f32(?))`,
+          id,
+          JSON.stringify(embedding),
+        );
       }
 
       await db.exec("COMMIT");
@@ -183,7 +194,9 @@ export class SqliteVectorStore implements VectorStore {
       db.get<CountRow>(`SELECT count(*) AS count FROM documents`),
       db.get<CountRow>(`SELECT count(DISTINCT source) AS count FROM documents`),
       db.get<CountRow>(`SELECT count(DISTINCT category) AS count FROM documents`),
-      db.all<ByCategoryRow[]>(`SELECT category, count(*) AS chunks FROM documents GROUP BY category ORDER BY chunks DESC, category ASC`),
+      db.all<ByCategoryRow[]>(
+        `SELECT category, count(*) AS chunks FROM documents GROUP BY category ORDER BY chunks DESC, category ASC`,
+      ),
     ]);
 
     return {

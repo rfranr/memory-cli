@@ -63,7 +63,13 @@ describe("SqliteVectorStore.find", () => {
     const categoryResult = await store.find({ category: "llms", limit: 20, offset: 0 });
     expect(categoryResult.total).toBe(2);
 
-    const combined = await store.find({ file: "machinelearning", text: "pipeline", category: "llms", limit: 20, offset: 0 });
+    const combined = await store.find({
+      file: "machinelearning",
+      text: "pipeline",
+      category: "llms",
+      limit: 20,
+      offset: 0,
+    });
     expect(combined.total).toBe(1);
     expect(combined.matches[0]).toMatchObject({
       source: "assets/docs/machinelearning-notes.txt",

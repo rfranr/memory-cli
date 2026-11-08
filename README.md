@@ -114,6 +114,18 @@ categories:
       - "DDD"
 ```
 
+## Development
+
+Use pnpm for development and verification:
+
+```bash
+pnpm test
+pnpm run check:report
+```
+
+See [development workflow](docs/development.md) for quality gates, formatting,
+report coverage, and known adoption blockers. Agent guidance is in [AGENTS.md](AGENTS.md).
+
 ## Build
 
 ```bash

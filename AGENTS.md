@@ -110,3 +110,34 @@ Search results should return content plus metadata such as:
 - Keep the CLI focused on local-first taxonomy classification, indexing, and semantic search.
 - Add tests for new features and functionality. 
 - Update documentation in the README.md when necessary.
+
+## Agent workflow and quality
+
+- Read these instructions, the assigned task, relevant ADRs, and existing source/tests before editing.
+- Preserve behavior, public CLI contracts, pnpm, Vitest, and strict TypeScript checks.
+- Keep code optimized for human comprehension: descriptive names, explicit state ownership, cohesive responsibilities, and comments explaining non-obvious policy.
+- Prefer meaningful improvements over metric-driven fragmentation or unnecessary abstractions.
+- Load relevant available skills before specialized work; use technical-documentation for README and agent guidance changes.
+- Obtain explicit approval before installing dependencies or changing the environment. Never install global packages or modify files outside this project.
+- Do not modify the sibling template repository. Propose reusable improvements separately for human review.
+
+After source changes, format the changed files with Prettier and run `pnpm run check:report`.
+`pnpm run format` formats the whole maintained code tree; do not use it for unrelated formatting churn.
+See `docs/development.md` for command coverage and the adoption baseline.
+
+Blocking gates are whole-project Prettier failures, lint errors, failed tests,
+typecheck/build failures, and failures to execute reports. Every group runs even if an earlier one fails.
+Warnings remain warnings: complexity, function shape, layout, dependency cycles,
+TypeScript metrics, and structural findings are advisory. Cognitive/cyclomatic warnings
+use limits 5/10; nesting/parameters/function length use 4/4/100. Tests have only a
+function-length exception; statement counting is disabled. Correctness, type-safety,
+and selected readability conventions remain errors. See `docs/development.md` for the approved policy.
+Template defaults are references, not mandatory project policy. Do not change the
+approved policy, add suppressions, or modify existing tests merely to make checks pass.
+If existing violations cannot be fixed within the authorized scope, report the blocker instead of bypassing it.
+
+Before completion, review changed code for readability and report:
+- Summary and affected paths.
+- Tests, typecheck, build, and report execution results (only checks actually run).
+- Total and maximum cognitive complexity, remaining lint errors/warnings, and relevant advisory findings.
+- Unresolved blockers and verification limitations.

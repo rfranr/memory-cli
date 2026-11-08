@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { IndexDocumentUseCase } from "../src/application/index-document.js";
-import type { CategoryMatch, Metadata, SearchMatch } from "../src/domain/entities.js";
+import type { CategoryMatch, DocumentChunk, Metadata } from "../src/domain/entities.js";
 
 function makeEmbeddings() {
   const inputs: string[] = [];
@@ -27,30 +27,6 @@ function makeCategoryStore(match: CategoryMatch | undefined) {
   };
 }
 
-function makeVectorStore() {
-  const records: SearchMatch[] = [];
-  return {
-    records,
-    init: vi.fn(async () => {}),
-    add: vi.fn(async (chunk: SearchMatch) => {
-      records.push(chunk);
-      return records.length;
-    }),
-    addMany: vi.fn(async (chunks: SearchMatch[]) => {
-      const ids: number[] = [];
-      for (const chunk of chunks) {
-        records.push(chunk);
-        ids.push(records.length);
-      }
-      return ids;
-    }),
-    search: vi.fn(),
-    find: vi.fn(),
-    stats: vi.fn(),
-    close: vi.fn(async () => {}),
-  };
-}
-
 describe("IndexDocumentUseCase", () => {
   it("indexes each chunk independently and returns chunk ids", async () => {
     const embeddings = makeEmbeddings();
@@ -68,7 +44,7 @@ describe("IndexDocumentUseCase", () => {
     const store = {
       init: vi.fn(async () => {}),
       add: vi.fn(),
-      addMany: vi.fn(async (chunks: any[]) => {
+      addMany: vi.fn(async (chunks: DocumentChunk[]) => {
         const ids: number[] = [];
         for (const chunk of chunks) {
           storeRecords.push(chunk);

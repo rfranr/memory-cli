@@ -29,7 +29,9 @@ export function chunkText(input: string, options: ChunkTextOptions = {}): TextCh
     throw new Error("minChunkSize must be a non-negative integer");
   }
 
-  const initialChunks = paragraphRanges(input).flatMap((paragraph) => splitLargeParagraph(input, paragraph, maxChunkSize));
+  const initialChunks = paragraphRanges(input).flatMap((paragraph) =>
+    splitLargeParagraph(input, paragraph, maxChunkSize),
+  );
   const mergedChunks = mergeSmallChunks(input, initialChunks, { maxChunkSize, minChunkSize });
   const chunkCount = mergedChunks.length;
 
@@ -53,7 +55,7 @@ function mergeSmallChunks(
   let cursor = 0;
 
   while (cursor < chunks.length) {
-    let start = chunks[cursor].chunkStart;
+    const start = chunks[cursor].chunkStart;
     let end = chunks[cursor].chunkEnd;
 
     // Always try to grow chunks up to maxChunkSize.

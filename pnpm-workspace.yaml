@@ -1,3 +1,4 @@
 allowBuilds:
   node-llama-cpp: true
   sqlite3: true
+  tsmetrics: true

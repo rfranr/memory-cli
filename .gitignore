@@ -1,6 +1,7 @@
 node_modules/
 models/
 dist/
+metrics.html
 assets/docs
 categories.*.yml
 *.sqlite
