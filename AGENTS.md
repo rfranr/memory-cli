@@ -104,6 +104,24 @@ Search results should return content plus metadata such as:
 - SQLite and/or sqlite-vec
 - Bundled CLI output
 
+## Approved quality workflow
+
+- Use Node 24 and pnpm; preserve `pnpm-lock.yaml`, the NodeNext build, and Vitest.
+- Read the development quality section in `README.md` before changing tooling.
+- Run `pnpm run format`, `pnpm run check`, and `pnpm run check:report` after changes.
+  `pnpm run metrics:html` generates an optional ignored HTML report.
+- Format maintained code/config with double quotes, semicolons, two spaces, width 120.
+- Formatting, lint errors, typechecks, tests, and build are blocking. Complexity,
+  metric values, and cycles are advisory; report execution failures are blocking.
+- Do not weaken policy, suppress existing debt, or edit existing tests merely to pass.
+  Report blockers and request approval for separate cleanup/refactoring.
+- Report exact commands/outcomes, cognitive total/maximum, remaining violations,
+  coverage gaps, and unintended diff changes. Never claim unrun checks passed.
+- Do not load/install new Pi packages or native skill dependencies without approval.
+  Keep copied skills and adoption snapshots outside application check coverage.
+- For maintainability reviews, read `.pi/skills/maintainability-review/SKILL.md` first;
+  use Joern only for explicitly requested graph evidence after reading its skill.
+
 ## Development requirements
 
 - Inspect `./src` for comments and existing conventions before changing code.

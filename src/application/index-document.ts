@@ -12,7 +12,10 @@ export class IndexDocumentUseCase {
     private readonly categories: CategoryStore,
   ) {}
 
-  async execute(command: IndexDocumentCommand, progress: ProgressReporter = noopProgressReporter): Promise<IndexDocumentResult> {
+  async execute(
+    command: IndexDocumentCommand,
+    progress: ProgressReporter = noopProgressReporter,
+  ): Promise<IndexDocumentResult> {
     const content = await readInput(command.input);
     const chunks = chunkText(content);
 
@@ -31,7 +34,9 @@ export class IndexDocumentUseCase {
       const [bestMatch] = await this.categories.search(chunkEmbedding, 1);
 
       if (!bestMatch) {
-        throw new Error("Cannot index document: categories database is empty. Run `rag-cli categories sync <categories.yml>` first.");
+        throw new Error(
+          "Cannot index document: categories database is empty. Run `rag-cli categories sync <categories.yml>` first.",
+        );
       }
 
       chunksToInsert.push({

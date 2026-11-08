@@ -7,10 +7,21 @@
     "rag-cli": "dist/index.js"
   },
   "scripts": {
+    "format": "prettier --write \"{src,test,scripts}/**/*.{ts,mjs}\" \"*.{mjs,cjs,json}\"",
+    "format:check": "prettier --check \"{src,test,scripts}/**/*.{ts,mjs}\" \"*.{mjs,cjs,json}\"",
+    "lint": "eslint src/ test/ scripts/ \"*.{mjs,cjs}\"",
+    "complexity": "node scripts/complexity-report.mjs",
+    "metrics": "tsmetrics analyze ./src ./test",
+    "metrics:html": "tsmetrics analyze ./src ./test --format html > metrics.html",
+    "dependencies": "depcruise --config .dependency-cruiser.cjs -T err src/ test/",
+    "structure": "node scripts/run-structure.mjs",
+    "test:tooling": "node --test scripts/*.test.mjs",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test && pnpm run build",
+    "check:report": "node scripts/check-report.mjs",
     "build": "tsc -p tsconfig.build.json",
     "start": "node --loader ts-node/esm src/index.ts",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
-    "test": "tsc -p tsconfig.json --noEmit && vitest run"
+    "test": "tsc -p tsconfig.json --noEmit && vitest run && pnpm run test:tooling"
   },
   "keywords": [],
   "author": "",
@@ -23,10 +34,20 @@
     }
   },
   "type": "module",
+  "engines": {
+    "node": "^24.0.0"
+  },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@types/node": "^25.9.1",
+    "dependency-cruiser": "18.7.2",
+    "eslint": "10.14.0",
+    "eslint-plugin-sonarjs": "4.2.2",
+    "prettier": "3.9.10",
     "ts-node": "^10.9.2",
+    "tsmetrics": "0.4.0",
     "typescript": "^6.0.3",
+    "typescript-eslint": "8.72.1",
     "vitest": "^4.1.7"
   },
   "dependencies": {

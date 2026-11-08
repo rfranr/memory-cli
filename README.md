@@ -2,6 +2,52 @@
 
 Local CLI for taxonomy-based document classification, indexing, and semantic search using embeddings.
 
+## Development quality checks
+
+Use Node.js 24 and pnpm 11.2.2. Install with `pnpm install --frozen-lockfile`.
+The pinned tsmetrics package installs a platform binary from its GitHub release;
+its postinstall is explicitly allowed in `pnpm-workspace.yaml` alongside existing permissions.
+
+```bash
+pnpm run format       # rewrites maintained code/config formatting
+pnpm run check        # blocking: format, lint errors, typecheck, tests, build
+pnpm run check:report # runs check and all text reports, even after failures
+```
+
+Individual reports: `pnpm run complexity`, `pnpm run metrics`,
+`pnpm run dependencies`, and `pnpm run structure`. `pnpm run metrics:html`
+writes the ignored `metrics.html`. Report command failures are blockers;
+complexity warnings, metric values, and dependency cycles are advisory.
+Unresolved imports are errors. No CI workflow is installed.
+tsmetrics uses its own built-in diagnostic thresholds and may label findings
+`error`; these are advisory metric labels, not ESLint gates. Its exit status
+still determines whether report execution succeeded.
+
+ESLint recommended JavaScript/TypeScript rules and readability rules are blocking.
+Advisory limits: cyclomatic 10, cognitive 5, nesting 3, parameters 4,
+function lines 85 (excluding blanks/comments; exempt in tests), statements 22,
+and line width 120. Prettier uses double quotes, semicolons, and two spaces.
+Existing violations are not silently suppressed or automatically refactored.
+
+Coverage:
+
+- Lint: `src/**/*.ts`, `test/**/*.ts`, `scripts/**/*.mjs`, root MJS/CJS configs.
+- Format: source/tests/scripts plus root JSON/MJS/CJS configs; not Markdown or taxonomy.
+- Cognitive, TypeScript metrics, dependency and structural reports: `src/` and `test/`.
+  Maintained scripts/configs are linted but excluded from these application reports.
+- Tests: Vitest only discovers `test/**/*.test.ts`; `pnpm test` also runs Node tooling
+  tests in `scripts/*.test.mjs`. `pnpm run test:tooling` runs these separately.
+- Type checks include source/tests; build emits only source into `dist/`.
+  MJS tooling is linted and tested, not TypeScript-checked.
+- Generated output, dependencies, copied skills, adoption snapshots, user documents,
+  databases, logs, and secrets are outside maintained-code checks. Shell helpers are
+  not linted by this JavaScript/TypeScript toolchain. No test-coverage percentage gate.
+
+Pi feedback remains supplementary (`.pi-lens.json`); package commands are authoritative.
+Existing third-party Pi declarations remain unpinned and are not independently audited
+by this adoption. Review them before future installation. Optional AST/Joern skills are
+not part of `check`; install skill dependencies only with separate approval.
+
 ## Setup
 
 Install dependencies:

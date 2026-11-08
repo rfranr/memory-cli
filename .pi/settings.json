@@ -1,0 +1,7 @@
+{
+  "packages": [
+    "npm:@harms-haus/pi-lens",
+    "npm:pi-web-access",
+    "npm:pi-skills-sh"
+  ]
+}

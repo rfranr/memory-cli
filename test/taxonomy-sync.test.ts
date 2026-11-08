@@ -38,12 +38,14 @@ describe("category taxonomy sync", () => {
       examples: ["Clean Architecture", "DDD"],
     });
 
-    expect(text).toBe([
-      "Category id: software-architecture",
-      "Path: Tecnologia / Desenvolupament / Arquitectura",
-      "Description: Notes sobre disseny de software",
-      "Examples: Clean Architecture; DDD",
-    ].join("\n"));
+    expect(text).toBe(
+      [
+        "Category id: software-architecture",
+        "Path: Tecnologia / Desenvolupament / Arquitectura",
+        "Description: Notes sobre disseny de software",
+        "Examples: Clean Architecture; DDD",
+      ].join("\n"),
+    );
   });
 
   it("embeds and upserts every taxonomy entry from a YAML file", async () => {

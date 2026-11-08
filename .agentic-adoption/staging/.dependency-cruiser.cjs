@@ -1,0 +1,13 @@
+module.exports = {
+  forbidden: [
+    {
+      name: 'no-circular',
+      severity: 'warn',
+      from: {},
+      to: { circular: true },
+    },
+  ],
+  options: {
+    tsPreCompilationDeps: true,
+  },
+};
