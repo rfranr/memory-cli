@@ -7,3 +7,6 @@ categories.*.yml
 .env
 .env.*
 !.env.example
+metrics.html
+.pi/npm/
+.pi/validation-agent/

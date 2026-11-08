@@ -1,0 +1,9 @@
+#!/bin/sh
+# Lens currently uses npx for ESLint. Never download or run arbitrary packages.
+set -eu
+if [ "${1-}" != "eslint" ]; then
+  printf '%s\n' 'Lens pnpm adapter only supports ESLint; use pnpm exec for other tools.' >&2
+  exit 2
+fi
+shift
+exec pnpm exec eslint "$@"

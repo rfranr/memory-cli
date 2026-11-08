@@ -10,6 +10,7 @@ export class SearchDocumentsUseCase {
 
   async execute(command: SearchCommand): Promise<SearchMatch[]> {
     const embedding = await this.embeddings.embed(command.text);
+
     return this.store.search(embedding, command.limit);
   }
 }

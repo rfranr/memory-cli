@@ -47,6 +47,7 @@ export class SqliteCategoryStore implements CategoryStore {
 
   async upsert(category: CategoryEntry, embedding: number[]): Promise<void> {
     const db = this.ensureDb();
+
     await db.run(
       `INSERT INTO categories (id, path, description, examples_json, embedding_json, updated_at)
        VALUES (?, ?, ?, ?, ?, datetime('now'))
@@ -80,6 +81,7 @@ export class SqliteCategoryStore implements CategoryStore {
   async count(): Promise<number> {
     const db = this.ensureDb();
     const row = await db.get<CountRow>(`SELECT count(*) AS count FROM categories`);
+
     return row?.count ?? 0;
   }
 

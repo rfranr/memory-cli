@@ -12,7 +12,9 @@ async function makeStore() {
     embedding_model: "test-model",
     embedding_dimensions: "2",
   });
+
   await store.init();
+
   return store;
 }
 

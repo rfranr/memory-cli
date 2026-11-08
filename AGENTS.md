@@ -110,3 +110,16 @@ Search results should return content plus metadata such as:
 - Keep the CLI focused on local-first taxonomy classification, indexing, and semantic search.
 - Add tests for new features and functionality. 
 - Update documentation in the README.md when necessary.
+
+## Adopted development environment
+
+- Preserve pnpm, Vitest, TypeScript configuration, public APIs, and existing test assertions.
+- Keep implementations readable and cohesive. Prefer descriptive names and explicit state ownership; avoid abstractions or fragmentation introduced only to satisfy metrics.
+- After changes, run `pnpm format`, then `pnpm check:report`. The latter runs every check independently and retains failures.
+- `pnpm check` is the blocking gate: formatting, lint, tests, typecheck, build, and dependency-cycle analysis. Lint warnings are advisory, not errors.
+- Cognitive, TypeScript metrics, and structural reports are informational. Failure to execute any check or report is blocking. Review and report findings even when a command exits zero.
+- Do not weaken thresholds, disable rules, add suppressions, or change tests merely to obtain passing checks. Report blockers and request approval for substantive refactoring outside the task scope.
+- Do not install dependencies or change the environment without approval. Never install global packages or Skills; never modify the source template from this repository.
+- Project Pi packages are declared in `.pi/settings.json`. Review them before granting project trust. Use `pnpm agent` for pnpm-compatible Lens feedback; its adapter is confined to the daemon, and the launcher restarts this project's shared daemon. Read a matching Skill's `SKILL.md` before use; preserve bundled Skills and their supporting files.
+- For development commands, Skill setup, coverage, and known integration limitations, see [README.md](README.md#development) and [the adoption record](docs/development-environment-adoption.md).
+- Completion reports must distinguish executed verification from assumptions, list blockers separately from advisory findings, and include cognitive totals/maximum and test/build results.

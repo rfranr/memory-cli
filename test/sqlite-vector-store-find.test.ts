@@ -12,7 +12,9 @@ async function makeStore() {
     embedding_model: "test-model",
     embedding_dimensions: "2",
   });
+
   await store.init();
+
   return store;
 }
 
@@ -54,16 +56,26 @@ describe("SqliteVectorStore.find", () => {
     });
 
     const fileResult = await store.find({ file: "machinelearning", limit: 20, offset: 0 });
+
     expect(fileResult.total).toBe(2);
     expect(fileResult.matches).toHaveLength(2);
 
     const textResult = await store.find({ text: "pipeline", limit: 20, offset: 0 });
+
     expect(textResult.total).toBe(2);
 
     const categoryResult = await store.find({ category: "llms", limit: 20, offset: 0 });
+
     expect(categoryResult.total).toBe(2);
 
-    const combined = await store.find({ file: "machinelearning", text: "pipeline", category: "llms", limit: 20, offset: 0 });
+    const combined = await store.find({
+      file: "machinelearning",
+      text: "pipeline",
+      category: "llms",
+      limit: 20,
+      offset: 0,
+    });
+
     expect(combined.total).toBe(1);
     expect(combined.matches[0]).toMatchObject({
       source: "assets/docs/machinelearning-notes.txt",

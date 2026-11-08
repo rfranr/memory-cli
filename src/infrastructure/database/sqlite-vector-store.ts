@@ -1,7 +1,14 @@
 import sqlite3 from "sqlite3";
 import { open, type Database } from "sqlite";
 import { load as loadSqliteVec } from "sqlite-vec";
-import type { DocumentChunk, DocumentStats, FindMatch, FindResult, SearchMatch, TaxonomyEntry } from "../../domain/entities.js";
+import type {
+  DocumentChunk,
+  DocumentStats,
+  FindMatch,
+  FindResult,
+  SearchMatch,
+  TaxonomyEntry,
+} from "../../domain/entities.js";
 import type { VectorStore } from "../../domain/ports.js";
 import type { IndexMetadata } from "../../shared/index-metadata.js";
 import { ensureIndexMetadata } from "../../shared/index-metadata.js";
@@ -83,6 +90,7 @@ export class SqliteVectorStore implements VectorStore {
 
   async add(chunk: DocumentChunk): Promise<number> {
     const [id] = await this.addMany([chunk]);
+
     return id ?? 0;
   }
 
@@ -109,11 +117,17 @@ export class SqliteVectorStore implements VectorStore {
         );
 
         const id = result.lastID ?? 0;
+
         ids.push(id);
-        await db.run(`INSERT INTO documents_vec(rowid, embedding) VALUES (?, vec_f32(?))`, id, JSON.stringify(embedding));
+        await db.run(
+          `INSERT INTO documents_vec(rowid, embedding) VALUES (?, vec_f32(?))`,
+          id,
+          JSON.stringify(embedding),
+        );
       }
 
       await db.exec("COMMIT");
+
       return ids;
     } catch (error) {
       await db.exec("ROLLBACK");
@@ -149,9 +163,11 @@ export class SqliteVectorStore implements VectorStore {
     return knn
       .map(({ rowid, distance }) => {
         const row = docsById.get(rowid);
+
         if (!row) {
           return undefined;
         }
+
         return this.toSearchMatch({ ...row, distance } as KnnRow);
       })
       .filter((match): match is SearchMatch => Boolean(match));
@@ -183,7 +199,9 @@ export class SqliteVectorStore implements VectorStore {
       db.get<CountRow>(`SELECT count(*) AS count FROM documents`),
       db.get<CountRow>(`SELECT count(DISTINCT source) AS count FROM documents`),
       db.get<CountRow>(`SELECT count(DISTINCT category) AS count FROM documents`),
-      db.all<ByCategoryRow[]>(`SELECT category, count(*) AS chunks FROM documents GROUP BY category ORDER BY chunks DESC, category ASC`),
+      db.all<ByCategoryRow[]>(
+        `SELECT category, count(*) AS chunks FROM documents GROUP BY category ORDER BY chunks DESC, category ASC`,
+      ),
     ]);
 
     return {
@@ -258,6 +276,7 @@ function normalizeEmbedding(values: number[], dimensions: number): number[] {
   }
 
   let norm = 0;
+
   for (const value of values) {
     norm += value * value;
   }
@@ -267,17 +286,20 @@ function normalizeEmbedding(values: number[], dimensions: number): number[] {
   }
 
   const scale = 1 / Math.sqrt(norm);
+
   return values.map((value) => value * scale);
 }
 
 function l2DistanceToCosineSimilarity(distance: number): number {
   // For unit-normalized vectors: ||a-b||^2 = 2 - 2cos(a,b)  => cos = 1 - d^2/2
   const similarity = 1 - (distance * distance) / 2;
+
   return Math.max(-1, Math.min(1, similarity));
 }
 
 function buildWhereClause(filters: FindFilters): { sql: string } {
   const clauses = buildClauses(filters);
+
   return { sql: clauses.length > 0 ? ` WHERE ${clauses.join(" AND ")}` : "" };
 }
 

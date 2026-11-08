@@ -11,9 +11,11 @@ export class TaxonomySyncUseCase {
 
   async execute(command: TaxonomySyncCommand, progress: ProgressReporter = noopProgressReporter): Promise<number> {
     const taxonomyCategories = await loadTaxonomyFile(command.taxonomyFile);
+
     progress.start(taxonomyCategories.length);
 
     let processed = 0;
+
     for (const category of taxonomyCategories) {
       await this.categories.upsert(category, await this.embeddings.embed(categoryEmbeddingText(category)));
       processed += 1;
@@ -21,6 +23,7 @@ export class TaxonomySyncUseCase {
     }
 
     progress.done(taxonomyCategories.length);
+
     return taxonomyCategories.length;
   }
 }

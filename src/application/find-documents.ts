@@ -7,6 +7,7 @@ export class FindDocumentsUseCase {
 
   async execute(command: FindCommand): Promise<FindResult> {
     validateFilters(command);
+
     return this.store.find({
       file: command.file,
       text: command.text,

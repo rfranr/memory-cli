@@ -25,21 +25,29 @@ const loadedEnvFiles = new Set<string>();
 export function buildConfig(options: ConfigOptions): AppConfig {
   loadEnvFile(options.envFile);
 
-  const embeddingDimensionsRaw = options.embeddingDimensions ?? process.env.RAG_CLI_EMBEDDING_DIMENSIONS ?? "";
-  const embeddingDimensions = Number.parseInt(embeddingDimensionsRaw, 10);
+  return {
+    databasePath: configValue(options.db, "RAG_CLI_DB", "./rag.sqlite"),
+    categoriesDatabasePath: configValue(options.categoriesDb, "RAG_CLI_CATEGORIES_DB", "./rag-categories.sqlite"),
+    embeddingEndpoint: configValue(options.embeddingUrl, "RAG_CLI_EMBEDDING_URL", "http://localhost:3000/embedding"),
+    embeddingProvider: configValue(options.embeddingProvider, "RAG_CLI_EMBEDDING_PROVIDER", "unknown"),
+    embeddingModel: configValue(options.embeddingModel, "RAG_CLI_EMBEDDING_MODEL", "unknown"),
+    embeddingDimensions: parseEmbeddingDimensions(options.embeddingDimensions),
+  };
+}
 
-  if (!Number.isFinite(embeddingDimensions) || embeddingDimensions <= 0) {
+// Explicit options override the environment; empty strings remain explicit values.
+function configValue(option: string | undefined, environmentKey: string, fallback: string): string {
+  return option ?? process.env[environmentKey] ?? fallback;
+}
+
+function parseEmbeddingDimensions(option: string | undefined): number {
+  const dimensions = Number.parseInt(configValue(option, "RAG_CLI_EMBEDDING_DIMENSIONS", ""), 10);
+
+  if (!Number.isFinite(dimensions) || dimensions <= 0) {
     throw new Error("RAG_CLI_EMBEDDING_DIMENSIONS must be a positive integer");
   }
 
-  return {
-    databasePath: options.db ?? process.env.RAG_CLI_DB ?? "./rag.sqlite",
-    categoriesDatabasePath: options.categoriesDb ?? process.env.RAG_CLI_CATEGORIES_DB ?? "./rag-categories.sqlite",
-    embeddingEndpoint: options.embeddingUrl ?? process.env.RAG_CLI_EMBEDDING_URL ?? "http://localhost:3000/embedding",
-    embeddingProvider: options.embeddingProvider ?? process.env.RAG_CLI_EMBEDDING_PROVIDER ?? "unknown",
-    embeddingModel: options.embeddingModel ?? process.env.RAG_CLI_EMBEDDING_MODEL ?? "unknown",
-    embeddingDimensions,
-  };
+  return dimensions;
 }
 
 export function loadEnvFile(envFile = ".env"): void {

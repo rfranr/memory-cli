@@ -1,13 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { IndexDocumentUseCase } from "../src/application/index-document.js";
-import type { CategoryMatch, Metadata, SearchMatch } from "../src/domain/entities.js";
+import type { CategoryMatch, DocumentChunk, Metadata } from "../src/domain/entities.js";
 
 function makeEmbeddings() {
   const inputs: string[] = [];
+
   return {
     inputs,
     embed: vi.fn(async (input: string) => {
       inputs.push(input);
+
       return [input.length, 1];
     }),
   };
@@ -15,12 +17,14 @@ function makeEmbeddings() {
 
 function makeCategoryStore(match: CategoryMatch | undefined) {
   const searches: Array<{ embedding: number[]; limit: number }> = [];
+
   return {
     searches,
     init: vi.fn(async () => {}),
     upsert: vi.fn(),
     search: vi.fn(async (embedding: number[], limit: number) => {
       searches.push({ embedding, limit });
+
       return match ? [match] : [];
     }),
     close: vi.fn(async () => {}),
@@ -28,20 +32,24 @@ function makeCategoryStore(match: CategoryMatch | undefined) {
 }
 
 function makeVectorStore() {
-  const records: SearchMatch[] = [];
+  const records: DocumentChunk[] = [];
+
   return {
     records,
     init: vi.fn(async () => {}),
-    add: vi.fn(async (chunk: SearchMatch) => {
+    add: vi.fn(async (chunk: DocumentChunk) => {
       records.push(chunk);
+
       return records.length;
     }),
-    addMany: vi.fn(async (chunks: SearchMatch[]) => {
+    addMany: vi.fn(async (chunks: DocumentChunk[]) => {
       const ids: number[] = [];
+
       for (const chunk of chunks) {
         records.push(chunk);
         ids.push(records.length);
       }
+
       return ids;
     }),
     search: vi.fn(),
@@ -64,23 +72,8 @@ describe("IndexDocumentUseCase", () => {
       score: 0.84,
     };
     const categories = makeCategoryStore(bestMatch);
-    const storeRecords: Array<unknown> = [];
-    const store = {
-      init: vi.fn(async () => {}),
-      add: vi.fn(),
-      addMany: vi.fn(async (chunks: any[]) => {
-        const ids: number[] = [];
-        for (const chunk of chunks) {
-          storeRecords.push(chunk);
-          ids.push(storeRecords.length);
-        }
-        return ids;
-      }),
-      search: vi.fn(),
-      find: vi.fn(),
-      stats: vi.fn(),
-      close: vi.fn(async () => {}),
-    };
+    const store = makeVectorStore();
+    const storeRecords = store.records;
 
     const useCase = new IndexDocumentUseCase(embeddings as never, store as never, categories as never);
     const input = "First paragraph.\n\nSecond paragraph.";

@@ -10,66 +10,22 @@ interface MutableCategoryEntry {
 
 export async function loadTaxonomyFile(file: string): Promise<CategoryEntry[]> {
   const contents = await readFile(file, "utf8");
+
   return parseTaxonomyYaml(contents);
 }
 
 export function parseTaxonomyYaml(contents: string): CategoryEntry[] {
-  const categories: MutableCategoryEntry[] = [];
-  let current: MutableCategoryEntry | undefined;
-  let inCategories = false;
-  let inExamples = false;
+  const lines = contents
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+#.*$/, "").trim())
+    .filter(Boolean);
+  const categoriesStart = lines.indexOf("categories:");
 
-  for (const rawLine of contents.split(/\r?\n/)) {
-    const withoutComment = rawLine.replace(/\s+#.*$/, "");
-    const line = withoutComment.trim();
-
-    if (!line) {
-      continue;
-    }
-
-    if (line === "categories:") {
-      inCategories = true;
-      continue;
-    }
-
-    if (!inCategories) {
-      continue;
-    }
-
-    if (line.startsWith("- id:")) {
-      current = { id: parseScalar(line.slice("- id:".length)), examples: [] };
-      categories.push(current);
-      inExamples = false;
-      continue;
-    }
-
-    if (!current) {
-      continue;
-    }
-
-    if (line.startsWith("path:")) {
-      current.path = parseScalar(line.slice("path:".length));
-      inExamples = false;
-      continue;
-    }
-
-    if (line.startsWith("description:")) {
-      current.description = parseScalar(line.slice("description:".length));
-      inExamples = false;
-      continue;
-    }
-
-    if (line === "examples:") {
-      inExamples = true;
-      continue;
-    }
-
-    if (inExamples && line.startsWith("- ")) {
-      current.examples.push(parseScalar(line.slice(2)));
-    }
+  if (categoriesStart === -1) {
+    return [];
   }
 
-  return categories.map((category, index) => {
+  return collectCategories(lines.slice(categoriesStart + 1)).map((category, index) => {
     if (!category.id || !category.path) {
       throw new Error(`Invalid taxonomy category at index ${index}: id and path are required`);
     }
@@ -81,6 +37,54 @@ export function parseTaxonomyYaml(contents: string): CategoryEntry[] {
       examples: category.examples,
     };
   });
+}
+
+function collectCategories(lines: string[]): MutableCategoryEntry[] {
+  const categories: MutableCategoryEntry[] = [];
+  let current: MutableCategoryEntry | undefined;
+  let inExamples = false;
+
+  for (const line of lines) {
+    if (line.startsWith("- id:")) {
+      current = { id: parseScalar(line.slice("- id:".length)), examples: [] };
+      categories.push(current);
+      inExamples = false;
+      continue;
+    }
+
+    if (!current) {
+      continue;
+    }
+
+    inExamples = parseCategoryFields(current, line, inExamples);
+  }
+
+  return categories;
+}
+
+// Only known scalar fields end the examples list; ignored lines preserve parser state.
+function parseCategoryFields(current: MutableCategoryEntry, line: string, inExamples: boolean): boolean {
+  if (line.startsWith("path:")) {
+    current.path = parseScalar(line.slice("path:".length));
+
+    return false;
+  }
+
+  if (line.startsWith("description:")) {
+    current.description = parseScalar(line.slice("description:".length));
+
+    return false;
+  }
+
+  if (line === "examples:") {
+    return true;
+  }
+
+  if (inExamples && line.startsWith("- ")) {
+    current.examples.push(parseScalar(line.slice(2)));
+  }
+
+  return inExamples;
 }
 
 function parseScalar(value: string): string {

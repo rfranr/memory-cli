@@ -14,6 +14,7 @@ describe("FindDocumentsUseCase", () => {
     };
 
     const useCase = new FindDocumentsUseCase(store as never);
+
     await useCase.execute({ file: "docs", text: "pipeline", category: "llms", limit: 20, offset: 0 });
 
     expect(find).toHaveBeenCalledWith({ file: "docs", text: "pipeline", category: "llms", limit: 20, offset: 0 });

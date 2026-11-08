@@ -51,17 +51,7 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
     .option("--embedding-url <url>", "POST /embedding endpoint URL")
     .option("--env-file <path>", ".env file path", ".env");
 
-  const categories = program.command("categories").description("Manage the categories embedding database");
-
-  categories
-    .command("sync")
-    .description("Read the source-of-truth categories.yml and upsert category embeddings")
-    .argument("<taxonomy-file>", "Taxonomy YAML file, for example assets/taxonomy/categories.yml")
-    .action(async (taxonomyFile: string, options: CommonOptions) => {
-      const app = await createApp(resolveCommonOptions(program, options));
-      const count = await app.syncTaxonomy({ taxonomyFile });
-      console.log(JSON.stringify({ categories: count }, null, 2));
-    });
+  registerCategoryCommands(program, createApp);
 
   program
     .command("classify")
@@ -74,6 +64,7 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
         input,
         limit: Number.parseInt(options.limit ?? "5", 10),
       });
+
       console.log(JSON.stringify(matches, null, 2));
     });
 
@@ -88,6 +79,7 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
         input,
         metadata: parseMetadata(options.metadata),
       });
+
       console.log(JSON.stringify(result, null, 2));
     });
 
@@ -98,6 +90,7 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
     .action(async (options: CommonOptions) => {
       const app = await createApp(resolveCommonOptions(program, options));
       const stats = await app.stats();
+
       console.log(JSON.stringify(stats, null, 2));
     });
 
@@ -119,6 +112,7 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
         limit: Number.parseInt(options.limit ?? "20", 10),
         offset: Number.parseInt(options.offset ?? "0", 10),
       });
+
       console.log(JSON.stringify(result, null, 2));
     });
 
@@ -130,14 +124,31 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
     .action(async (text: string, options: SearchOptions) => {
       const app = await createApp(resolveCommonOptions(program, options));
       const matches = await app.search({ text, limit: Number.parseInt(options.limit ?? "10", 10) });
+
       console.log(JSON.stringify(matches, null, 2));
     });
 
   return program;
 }
 
+function registerCategoryCommands(program: Command, createApp: AppFactory): void {
+  const categories = program.command("categories").description("Manage the categories embedding database");
+
+  categories
+    .command("sync")
+    .description("Read the source-of-truth categories.yml and upsert category embeddings")
+    .argument("<taxonomy-file>", "Taxonomy YAML file, for example assets/taxonomy/categories.yml")
+    .action(async (taxonomyFile: string, options: CommonOptions) => {
+      const app = await createApp(resolveCommonOptions(program, options));
+      const count = await app.syncTaxonomy({ taxonomyFile });
+
+      console.log(JSON.stringify({ categories: count }, null, 2));
+    });
+}
+
 function resolveCommonOptions(program: Command, options: CommonOptions): CommonOptions {
   const globalOptions = program.opts<CommonOptions>();
+
   return {
     db: options.db ?? globalOptions.db,
     categoriesDb: options.categoriesDb ?? globalOptions.categoriesDb,
@@ -164,5 +175,6 @@ function validateFindOptions(options: FindOptions): void {
 
 async function defaultCreateApp(options: CommonOptions): Promise<CliApp> {
   const { createApp } = await import("../core/core.js");
+
   return createApp(options) as unknown as CliApp;
 }

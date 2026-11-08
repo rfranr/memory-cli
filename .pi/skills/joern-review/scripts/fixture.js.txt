@@ -1,0 +1,17 @@
+// Static parser fixture: never execute this file.
+function update(state, items) {
+  state.count = 1;
+  state.count += 2;
+  items[0] = state.count;
+  items.push(state.count);
+  state.count++;
+  function helper(value) { return value + 1; }
+  items.forEach(value => { state.count = helper(value); });
+  helper(state.count);
+  state.set('key', 1); // Name match does not prove this is a Map.
+  const alias = items;
+  alias.push(2);
+  Object.assign(state, { ready: true }); // Not a supported mutator name.
+  delete state.old; // Not in the assignment operator allowlist.
+  return items.map(value => helper(value));
+}

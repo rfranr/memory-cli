@@ -26,6 +26,7 @@ describe("chunkText", () => {
 
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks.every((chunk) => chunk.content.length <= 80)).toBe(true);
+
     for (const chunk of chunks) {
       expect(text.slice(chunk.chunkStart, chunk.chunkEnd)).toBe(chunk.content);
     }

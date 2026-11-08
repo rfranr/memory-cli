@@ -7,10 +7,12 @@ import type { CategoryEntry } from "../src/domain/entities.js";
 
 function makeFakeEmbeddings() {
   const calls: string[] = [];
+
   return {
     calls,
     embed: vi.fn(async (input: string) => {
       calls.push(input);
+
       return [input.length];
     }),
   };
@@ -18,6 +20,7 @@ function makeFakeEmbeddings() {
 
 function makeFakeCategoryStore() {
   const upserts: Array<{ category: CategoryEntry; embedding: number[] }> = [];
+
   return {
     upserts,
     init: vi.fn(async () => {}),
@@ -38,17 +41,20 @@ describe("category taxonomy sync", () => {
       examples: ["Clean Architecture", "DDD"],
     });
 
-    expect(text).toBe([
-      "Category id: software-architecture",
-      "Path: Tecnologia / Desenvolupament / Arquitectura",
-      "Description: Notes sobre disseny de software",
-      "Examples: Clean Architecture; DDD",
-    ].join("\n"));
+    expect(text).toBe(
+      [
+        "Category id: software-architecture",
+        "Path: Tecnologia / Desenvolupament / Arquitectura",
+        "Description: Notes sobre disseny de software",
+        "Examples: Clean Architecture; DDD",
+      ].join("\n"),
+    );
   });
 
   it("embeds and upserts every taxonomy entry from a YAML file", async () => {
     const dir = await mkdtemp(join(tmpdir(), "rag-cli-taxonomy-"));
     const taxonomyFile = join(dir, "categories.yml");
+
     await writeFile(
       taxonomyFile,
       `version: 1
@@ -81,6 +87,7 @@ categories:
     expect(embeddings.calls[1]).toContain("Path: A / C");
 
     const contents = await readFile(taxonomyFile, "utf8");
+
     expect(contents).toContain("version: 1");
   });
 });

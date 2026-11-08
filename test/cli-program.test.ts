@@ -114,22 +114,28 @@ describe("CLI commands", () => {
     await program.parseAsync(["node", "rag-cli", "find", "--text", "pipeline"]);
 
     expect(find).toHaveBeenCalledWith({ file: undefined, text: "pipeline", category: undefined, limit: 20, offset: 0 });
-    expect(logSpy).toHaveBeenCalledWith(JSON.stringify({
-      total: 1,
-      limit: 20,
-      offset: 0,
-      matches: [
+    expect(logSpy).toHaveBeenCalledWith(
+      JSON.stringify(
         {
-          id: 1,
-          source: "assets/docs/doc.txt",
-          content: "pipeline data",
-          taxonomy: {
-            category: "llms",
-            taxonomy: "Technology / AI / LLMs",
-            metadata: { fileName: "doc.txt", chunkIndex: 0 },
-          },
+          total: 1,
+          limit: 20,
+          offset: 0,
+          matches: [
+            {
+              id: 1,
+              source: "assets/docs/doc.txt",
+              content: "pipeline data",
+              taxonomy: {
+                category: "llms",
+                taxonomy: "Technology / AI / LLMs",
+                metadata: { fileName: "doc.txt", chunkIndex: 0 },
+              },
+            },
+          ],
         },
-      ],
-    }, null, 2));
+        null,
+        2,
+      ),
+    );
   });
 });

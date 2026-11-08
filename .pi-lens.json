@@ -1,0 +1,7 @@
+{
+  "prettier": false,
+  "linters": true,
+  "lsp": false,
+  "tsc": false,
+  "alwaysReport": true
+}

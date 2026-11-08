@@ -28,6 +28,7 @@ describe("StatsUseCase", () => {
     };
 
     const useCase = new StatsUseCase(store as never, categories as never, "./rag.sqlite", "./rag-categories.sqlite");
+
     await expect(useCase.execute()).resolves.toEqual({
       documentsDb: "./rag.sqlite",
       categoriesDb: "./rag-categories.sqlite",

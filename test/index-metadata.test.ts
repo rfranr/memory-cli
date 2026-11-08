@@ -22,14 +22,17 @@ describe("index_metadata", () => {
     const dbPath = join(dir, "docs.sqlite");
 
     const store1 = new SqliteVectorStore(dbPath, metaA);
+
     await store1.init();
     await store1.close();
 
     const store2 = new SqliteVectorStore(dbPath, metaA);
+
     await store2.init();
     await store2.close();
 
     const store3 = new SqliteVectorStore(dbPath, metaB);
+
     await expect(store3.init()).rejects.toThrow("documents index metadata mismatch");
   });
 });
