@@ -1,0 +1,4 @@
+$ depcruise --config .dependency-cruiser.cjs -T err src/ test/
+
+✔ no dependency violations found (37 modules, 85 dependencies cruised)
+

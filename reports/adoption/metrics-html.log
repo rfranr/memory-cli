@@ -1,0 +1,1 @@
+$ tsmetrics analyze ./src ./test --format html > metrics.html

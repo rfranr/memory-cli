@@ -1,0 +1,142 @@
+$ eslint src/ test/ scripts/
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/application/classify-document.ts
+  17:5   error  Expected blank line before this statement                                          stylistic/padding-line-between-statements
+  41:10  error  Refactor this function to reduce its Cognitive Complexity from 8 to the 5 allowed  sonarjs/cognitive-complexity
+  45:3   error  Expected blank line before this statement                                          stylistic/padding-line-between-statements
+  55:5   error  Expected blank line before this statement                                          stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/application/find-documents.ts
+  10:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/application/index-document.ts
+  15:1  warning  This line has a length of 129. Maximum allowed is 120  max-len
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/application/search-documents.ts
+  13:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/application/taxonomy-sync.ts
+  14:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  17:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  24:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/cli/program.ts
+   42:8  error  Function 'buildProgram' has too many lines (87). Maximum allowed is 85  max-lines-per-function
+   63:7  error  Expected blank line before this statement                               stylistic/padding-line-between-statements
+   77:7  error  Expected blank line before this statement                               stylistic/padding-line-between-statements
+   91:7  error  Expected blank line before this statement                               stylistic/padding-line-between-statements
+  101:7  error  Expected blank line before this statement                               stylistic/padding-line-between-statements
+  122:7  error  Expected blank line before this statement                               stylistic/padding-line-between-statements
+  133:7  error  Expected blank line before this statement                               stylistic/padding-line-between-statements
+  141:3  error  Expected blank line before this statement                               stylistic/padding-line-between-statements
+  167:3  error  Expected blank line before this statement                               stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/config/config.ts
+  25:8  error  Function 'buildConfig' has a complexity of 15. Maximum allowed is 10  complexity
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/core/core.ts
+   20:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+   29:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+   38:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+   47:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+   48:1  warning  This line has a length of 127. Maximum allowed is 120  max-len
+   56:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+   65:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+   86:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+  108:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+  122:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+  123:5  error    Expected blank line before this statement              stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/domain/ports.ts
+  12:1  warning  This line has a length of 121. Maximum allowed is 120  max-len
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/infrastructure/database/sqlite-category-store.ts
+  50:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  83:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/infrastructure/database/sqlite-vector-store.ts
+   86:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  112:9  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  117:7  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  152:9  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  155:9  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  261:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  270:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  276:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  281:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/infrastructure/taxonomy/yaml-taxonomy-loader.ts
+  13:3   error    Expected blank line before this statement                                           stylistic/padding-line-between-statements
+  16:8   warning  Function 'parseTaxonomyYaml' has too many statements (35). Maximum allowed is 22    max-statements
+  16:8   error    Function 'parseTaxonomyYaml' has a complexity of 12. Maximum allowed is 10          complexity
+  16:17  error    Refactor this function to reduce its Cognitive Complexity from 20 to the 5 allowed  sonarjs/cognitive-complexity
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/shared/chunk-text.ts
+   32:1   warning  This line has a length of 123. Maximum allowed is 120                               max-len
+   43:1   warning  Function 'mergeSmallChunks' has too many statements (29). Maximum allowed is 22     max-statements
+   43:10  error    Refactor this function to reduce its Cognitive Complexity from 16 to the 5 allowed  sonarjs/cognitive-complexity
+   56:9   error    'start' is never reassigned. Use 'const' instead                                    prefer-const
+   97:7   error    Expected blank line before this statement                                           stylistic/padding-line-between-statements
+  135:10  error    Refactor this function to reduce its Cognitive Complexity from 11 to the 5 allowed  sonarjs/cognitive-complexity
+  153:7   error    Expected blank line before this statement                                           stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/src/shared/index-metadata.ts
+   6:23  error  Refactor this function to reduce its Cognitive Complexity from 8 to the 5 allowed  sonarjs/cognitive-complexity
+  22:5   error  Expected blank line before this statement                                          stylistic/padding-line-between-statements
+  25:5   error  Expected blank line before this statement                                          stylistic/padding-line-between-statements
+  32:5   error  Expected blank line before this statement                                          stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/test/chunk-text.test.ts
+  29:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/test/find-documents.test.ts
+  17:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/test/index-document.test.ts
+   7:3   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+  11:7   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+  18:3   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+  24:7   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+  30:10  error  'makeVectorStore' is defined but never used  @typescript-eslint/no-unused-vars
+  32:3   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+  37:7   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+  41:7   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+  45:7   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+  71:37  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  73:9   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+  77:9   error  Expected blank line before this statement    stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/test/index-metadata.test.ts
+  25:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  29:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  33:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/test/read-input-init-cwd.test.ts
+  11:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/test/sqlite-vector-store-find.test.ts
+  15:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  16:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  57:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  61:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  64:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  67:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/test/sqlite-vector-store-knn.test.ts
+  15:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  16:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/test/stats.test.ts
+  31:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+/home/rfranr/source/github.com/rfranr/memory-cli/test/taxonomy-sync.test.ts
+  10:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  14:7  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  21:3  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  52:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+  84:5  error  Expected blank line before this statement  stylistic/padding-line-between-statements
+
+✖ 90 problems (84 errors, 6 warnings)
+  74 errors and 0 warnings potentially fixable with the `--fix` option.
+
+[ELIFECYCLE] Command failed with exit code 1.

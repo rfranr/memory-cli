@@ -1,0 +1,58 @@
+$ node scripts/complexity-report.mjs
+
+Cognitive Complexity Report
+=================================================================
+┌─────────┬─────────────────────────────────────────────────────────┬──────┬───────┬───────┬────────┐
+│ (index) │ file                                                    │ line │ score │ limit │ status │
+├─────────┼─────────────────────────────────────────────────────────┼──────┼───────┼───────┼────────┤
+│ 0       │ 'src/infrastructure/taxonomy/yaml-taxonomy-loader.ts'   │ 16   │ 20    │ 5     │ 'FAIL' │
+│ 1       │ 'src/shared/chunk-text.ts'                              │ 43   │ 16    │ 5     │ 'FAIL' │
+│ 2       │ 'src/shared/chunk-text.ts'                              │ 135  │ 11    │ 5     │ 'FAIL' │
+│ 3       │ 'src/application/classify-document.ts'                  │ 41   │ 8     │ 5     │ 'FAIL' │
+│ 4       │ 'src/shared/index-metadata.ts'                          │ 6    │ 8     │ 5     │ 'FAIL' │
+│ 5       │ 'src/config/config.ts'                                  │ 65   │ 5     │ 5     │ 'PASS' │
+│ 6       │ 'src/shared/chunk-text.ts'                              │ 110  │ 5     │ 5     │ 'PASS' │
+│ 7       │ 'src/application/classify-document.ts'                  │ 21   │ 4     │ 5     │ 'PASS' │
+│ 8       │ 'src/application/find-documents.ts'                     │ 20   │ 4     │ 5     │ 'PASS' │
+│ 9       │ 'src/application/index-document.ts'                     │ 15   │ 4     │ 5     │ 'PASS' │
+│ 10      │ 'src/config/config.ts'                                  │ 87   │ 4     │ 5     │ 'PASS' │
+│ 11      │ 'src/config/config.ts'                                  │ 45   │ 3     │ 5     │ 'PASS' │
+│ 12      │ 'src/infrastructure/database/sqlite-vector-store.ts'    │ 255  │ 3     │ 5     │ 'PASS' │
+│ 13      │ 'src/infrastructure/database/sqlite-vector-store.ts'    │ 284  │ 3     │ 5     │ 'PASS' │
+│ 14      │ 'src/infrastructure/database/sqlite-vector-store.ts'    │ 302  │ 3     │ 5     │ 'PASS' │
+│ 15      │ 'src/infrastructure/embedding/http-embedding-client.ts' │ 28   │ 3     │ 5     │ 'PASS' │
+│ 16      │ 'src/shared/chunk-text.ts'                              │ 173  │ 3     │ 5     │ 'PASS' │
+│ 17      │ 'src/shared/cosine.ts'                                  │ 1    │ 3     │ 5     │ 'PASS' │
+│ 18      │ 'src/application/taxonomy-sync.ts'                      │ 28   │ 2     │ 5     │ 'PASS' │
+│ 19      │ 'src/cli/program.ts'                                    │ 159  │ 2     │ 5     │ 'PASS' │
+│ 20      │ 'src/infrastructure/database/sqlite-vector-store.ts'    │ 89   │ 2     │ 5     │ 'PASS' │
+│ 21      │ 'src/infrastructure/embedding/http-embedding-client.ts' │ 6    │ 2     │ 5     │ 'PASS' │
+│ 22      │ 'src/infrastructure/embedding/http-embedding-client.ts' │ 52   │ 2     │ 5     │ 'PASS' │
+│ 23      │ 'src/infrastructure/taxonomy/yaml-taxonomy-loader.ts'   │ 86   │ 2     │ 5     │ 'PASS' │
+│ 24      │ 'src/shared/chunk-text.ts'                              │ 20   │ 2     │ 5     │ 'PASS' │
+│ 25      │ 'src/shared/chunk-text.ts'                              │ 183  │ 2     │ 5     │ 'PASS' │
+│ 26      │ 'src/shared/chunk-text.ts'                              │ 193  │ 2     │ 5     │ 'PASS' │
+│ 27      │ 'src/application/taxonomy-sync.ts'                      │ 12   │ 1     │ 5     │ 'PASS' │
+│ 28      │ 'src/cli/program.ts'                                    │ 149  │ 1     │ 5     │ 'PASS' │
+│ 29      │ 'src/config/config.ts'                                  │ 25   │ 1     │ 5     │ 'PASS' │
+│ 30      │ 'src/config/config.ts'                                  │ 95   │ 1     │ 5     │ 'PASS' │
+│ 31      │ 'src/infrastructure/database/sqlite-category-store.ts'  │ 91   │ 1     │ 5     │ 'PASS' │
+│ 32      │ 'src/infrastructure/database/sqlite-vector-store.ts'    │ 124  │ 1     │ 5     │ 'PASS' │
+│ 33      │ 'src/infrastructure/database/sqlite-vector-store.ts'    │ 150  │ 1     │ 5     │ 'PASS' │
+│ 34      │ 'src/infrastructure/database/sqlite-vector-store.ts'    │ 202  │ 1     │ 5     │ 'PASS' │
+│ 35      │ 'src/infrastructure/database/sqlite-vector-store.ts'    │ 244  │ 1     │ 5     │ 'PASS' │
+│ 36      │ 'src/infrastructure/database/sqlite-vector-store.ts'    │ 279  │ 1     │ 5     │ 'PASS' │
+│ 37      │ 'src/infrastructure/embedding/http-embedding-client.ts' │ 44   │ 1     │ 5     │ 'PASS' │
+│ 38      │ 'src/infrastructure/embedding/http-embedding-client.ts' │ 48   │ 1     │ 5     │ 'PASS' │
+│ 39      │ 'src/infrastructure/taxonomy/yaml-taxonomy-loader.ts'   │ 72   │ 1     │ 5     │ 'PASS' │
+│ 40      │ 'test/chunk-text.test.ts'                               │ 23   │ 1     │ 5     │ 'PASS' │
+│ 41      │ 'test/index-document.test.ts'                           │ 22   │ 1     │ 5     │ 'PASS' │
+│ 42      │ 'test/index-document.test.ts'                           │ 39   │ 1     │ 5     │ 'PASS' │
+│ 43      │ 'test/index-document.test.ts'                           │ 71   │ 1     │ 5     │ 'PASS' │
+└─────────┴─────────────────────────────────────────────────────────┴──────┴───────┴───────┴────────┘
+Functions with complexity > 0: 44
+Total complexity:             145
+Average (positive scores):    3.30
+Maximum score:                20
+Violations:                   5
+Status:                       FAIL

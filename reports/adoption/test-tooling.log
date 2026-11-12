@@ -1,0 +1,18 @@
+$ node --test scripts/*.test.mjs
+✔ structure passes the pnpm graph to the delivered analyzer (1.753527ms)
+✔ structure preserves graph failure without running the analyzer (0.212043ms)
+✔ structure preserves analyzer failure (0.206613ms)
+✔ structural metrics include test modules and exclude external modules (44.37181ms)
+✔ aggregate reporter attempts every report after a gate failure (215.228418ms)
+✔ aggregate reporter retains report failures (221.84534ms)
+✔ aggregate reporter succeeds when all commands succeed (192.860793ms)
+✔ Vitest discovery preserves the application suite without optional fixtures (0.205952ms)
+✔ aggregate check retains existing tests and includes tooling tests (0.185473ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 746.643346

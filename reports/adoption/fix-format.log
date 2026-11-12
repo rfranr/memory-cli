@@ -1,0 +1,38 @@
+$ prettier --write "{src,test}/**/*.{ts,js,mjs}"
+src/application/classify-document.ts 67ms (unchanged)
+src/application/find-documents.ts 10ms (unchanged)
+src/application/index-document.ts 15ms (unchanged)
+src/application/search-documents.ts 3ms (unchanged)
+src/application/stats.ts 5ms (unchanged)
+src/application/taxonomy-sync.ts 9ms (unchanged)
+src/cli/program.ts 32ms (unchanged)
+src/config/config.ts 20ms (unchanged)
+src/core/core.ts 16ms (unchanged)
+src/domain/commands.ts 3ms (unchanged)
+src/domain/entities.ts 4ms (unchanged)
+src/domain/ports.ts 3ms (unchanged)
+src/index.ts 4ms (unchanged)
+src/infrastructure/database/sqlite-category-store.ts 14ms (unchanged)
+src/infrastructure/database/sqlite-vector-store.ts 36ms (unchanged)
+src/infrastructure/embedding/http-embedding-client.ts 5ms (unchanged)
+src/infrastructure/taxonomy/yaml-taxonomy-loader.ts 7ms (unchanged)
+src/shared/chunk-text.ts 18ms (unchanged)
+src/shared/cosine.ts 3ms (unchanged)
+src/shared/index-metadata.ts 5ms (unchanged)
+src/shared/progress.ts 4ms (unchanged)
+test/chunk-text.test.ts 13ms
+test/cli-program.test.ts 20ms (unchanged)
+test/config.test.ts 6ms
+test/ensure-index-metadata.test.ts 3ms
+test/find-documents.test.ts 4ms (unchanged)
+test/index-document.test.ts 9ms (unchanged)
+test/index-metadata.test.ts 3ms (unchanged)
+test/metadata-parse.test.ts 2ms (unchanged)
+test/read-input-init-cwd.test.ts 2ms (unchanged)
+test/read-input-paths.test.ts 3ms
+test/read-input-url.test.ts 3ms (unchanged)
+test/sqlite-vector-store-find.test.ts 6ms (unchanged)
+test/sqlite-vector-store-knn.test.ts 4ms (unchanged)
+test/stats.test.ts 4ms (unchanged)
+test/taxonomy-sync.test.ts 6ms (unchanged)
+test/yaml-taxonomy-loader.test.ts 3ms
