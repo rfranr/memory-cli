@@ -1,5 +1,5 @@
-import { readFile } from "node:fs/promises";
-import type { CategoryEntry } from "../../domain/entities.js";
+import { readFile } from 'node:fs/promises';
+import type { CategoryEntry } from '../../domain/entities.js';
 
 interface MutableCategoryEntry {
   id?: string;
@@ -9,35 +9,19 @@ interface MutableCategoryEntry {
 }
 
 export async function loadTaxonomyFile(file: string): Promise<CategoryEntry[]> {
-  const contents = await readFile(file, "utf8");
+  const contents = await readFile(file, 'utf8');
+
   return parseTaxonomyYaml(contents);
 }
 
 export function parseTaxonomyYaml(contents: string): CategoryEntry[] {
   const categories: MutableCategoryEntry[] = [];
   let current: MutableCategoryEntry | undefined;
-  let inCategories = false;
   let inExamples = false;
 
-  for (const rawLine of contents.split(/\r?\n/)) {
-    const withoutComment = rawLine.replace(/\s+#.*$/, "");
-    const line = withoutComment.trim();
-
-    if (!line) {
-      continue;
-    }
-
-    if (line === "categories:") {
-      inCategories = true;
-      continue;
-    }
-
-    if (!inCategories) {
-      continue;
-    }
-
-    if (line.startsWith("- id:")) {
-      current = { id: parseScalar(line.slice("- id:".length)), examples: [] };
+  for (const line of taxonomyLines(contents)) {
+    if (line.startsWith('- id:')) {
+      current = { id: parseScalar(line.slice('- id:'.length)), examples: [] };
       categories.push(current);
       inExamples = false;
       continue;
@@ -47,26 +31,7 @@ export function parseTaxonomyYaml(contents: string): CategoryEntry[] {
       continue;
     }
 
-    if (line.startsWith("path:")) {
-      current.path = parseScalar(line.slice("path:".length));
-      inExamples = false;
-      continue;
-    }
-
-    if (line.startsWith("description:")) {
-      current.description = parseScalar(line.slice("description:".length));
-      inExamples = false;
-      continue;
-    }
-
-    if (line === "examples:") {
-      inExamples = true;
-      continue;
-    }
-
-    if (inExamples && line.startsWith("- ")) {
-      current.examples.push(parseScalar(line.slice(2)));
-    }
+    inExamples = parseCategoryLine(current, line, inExamples);
   }
 
   return categories.map((category, index) => {
@@ -81,6 +46,41 @@ export function parseTaxonomyYaml(contents: string): CategoryEntry[] {
       examples: category.examples,
     };
   });
+}
+
+function taxonomyLines(contents: string): string[] {
+  const lines = contents.split(/\r?\n/).map((line) => line.replace(/\s+#.*$/, '').trim());
+  const start = lines.indexOf('categories:');
+
+  return start < 0 ? [] : lines.slice(start + 1).filter((line) => line && line !== 'categories:');
+}
+
+function parseCategoryLine(current: MutableCategoryEntry, line: string, inExamples: boolean): boolean {
+  if (line.startsWith('path:')) {
+    current.path = parseScalar(line.slice('path:'.length));
+
+    return false;
+  }
+
+  if (line.startsWith('description:')) {
+    current.description = parseScalar(line.slice('description:'.length));
+
+    return false;
+  }
+
+  if (line === 'examples:') {
+    return true;
+  }
+
+  appendExample(current, line, inExamples);
+
+  return inExamples;
+}
+
+function appendExample(current: MutableCategoryEntry, line: string, inExamples: boolean): void {
+  if (inExamples && line.startsWith('- ')) {
+    current.examples.push(parseScalar(line.slice(2)));
+  }
 }
 
 function parseScalar(value: string): string {

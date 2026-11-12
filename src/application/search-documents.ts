@@ -1,6 +1,6 @@
-import type { SearchCommand } from "../domain/commands.js";
-import type { SearchMatch } from "../domain/entities.js";
-import type { EmbeddingClient, VectorStore } from "../domain/ports.js";
+import type { SearchCommand } from '../domain/commands.js';
+import type { SearchMatch } from '../domain/entities.js';
+import type { EmbeddingClient, VectorStore } from '../domain/ports.js';
 
 export class SearchDocumentsUseCase {
   constructor(
@@ -10,6 +10,7 @@ export class SearchDocumentsUseCase {
 
   async execute(command: SearchCommand): Promise<SearchMatch[]> {
     const embedding = await this.embeddings.embed(command.text);
+
     return this.store.search(embedding, command.limit);
   }
 }

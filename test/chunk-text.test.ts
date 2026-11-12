@@ -1,14 +1,14 @@
-import { describe, expect, it } from "vitest";
-import { chunkText } from "../src/shared/chunk-text.js";
+import { describe, expect, it } from 'vitest';
+import { chunkText } from '../src/shared/chunk-text.js';
 
-describe("chunkText", () => {
-  it("returns no chunks for empty or whitespace input", () => {
-    expect(chunkText("")).toEqual([]);
-    expect(chunkText("   \n\t  ")).toEqual([]);
+describe('chunkText', () => {
+  it('returns no chunks for empty or whitespace input', () => {
+    expect(chunkText('')).toEqual([]);
+    expect(chunkText('   \n\t  ')).toEqual([]);
   });
 
-  it("merges small paragraphs into larger human-readable chunks by default", () => {
-    const text = "First paragraph.\n\nSecond paragraph.";
+  it('merges small paragraphs into larger human-readable chunks by default', () => {
+    const text = 'First paragraph.\n\nSecond paragraph.';
     const chunks = chunkText(text);
 
     expect(chunks).toHaveLength(1);
@@ -20,12 +20,24 @@ describe("chunkText", () => {
     expect(text.slice(chunks[0].chunkStart, chunks[0].chunkEnd)).toBe(chunks[0].content);
   });
 
-  it("splits long paragraphs into smaller chunks", () => {
-    const text = Array.from({ length: 100 }, (_, index) => `word${index}`).join(" ");
+  it('greedily merges up to the size boundary even when the minimum is zero', () => {
+    const text = 'aaaa\n\nbbbb\n\ncccc';
+    const chunks = chunkText(text, { maxChunkSize: 10, minChunkSize: 0 });
+
+    expect(chunks.map((chunk) => chunk.content)).toEqual(['aaaa\n\nbbbb', 'cccc']);
+    expect(chunks.map((chunk) => [chunk.chunkStart, chunk.chunkEnd])).toEqual([
+      [0, 10],
+      [12, 16],
+    ]);
+  });
+
+  it('splits long paragraphs into smaller chunks', () => {
+    const text = Array.from({ length: 100 }, (_, index) => `word${index}`).join(' ');
     const chunks = chunkText(text, { maxChunkSize: 80, minChunkSize: 0 });
 
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks.every((chunk) => chunk.content.length <= 80)).toBe(true);
+
     for (const chunk of chunks) {
       expect(text.slice(chunk.chunkStart, chunk.chunkEnd)).toBe(chunk.content);
     }
@@ -34,8 +46,8 @@ describe("chunkText", () => {
     expect(chunks.every((chunk) => chunk.chunkCount === chunks.length)).toBe(true);
   });
 
-  it("allows a small final leftover chunk when it cannot be merged without exceeding maxChunkSize", () => {
-    const text = `${"a".repeat(95)}\n\n${"b".repeat(5)}`;
+  it('allows a small final leftover chunk when it cannot be merged without exceeding maxChunkSize', () => {
+    const text = `${'a'.repeat(95)}\n\n${'b'.repeat(5)}`;
     const chunks = chunkText(text, { maxChunkSize: 100, minChunkSize: 60 });
 
     expect(chunks).toHaveLength(2);

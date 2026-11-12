@@ -22,14 +22,16 @@ export function chunkText(input: string, options: ChunkTextOptions = {}): TextCh
   const minChunkSize = options.minChunkSize ?? DEFAULT_MIN_CHUNK_SIZE;
 
   if (!Number.isInteger(maxChunkSize) || maxChunkSize < 1) {
-    throw new Error("maxChunkSize must be a positive integer");
+    throw new Error('maxChunkSize must be a positive integer');
   }
 
   if (!Number.isInteger(minChunkSize) || minChunkSize < 0) {
-    throw new Error("minChunkSize must be a non-negative integer");
+    throw new Error('minChunkSize must be a non-negative integer');
   }
 
-  const initialChunks = paragraphRanges(input).flatMap((paragraph) => splitLargeParagraph(input, paragraph, maxChunkSize));
+  const initialChunks = paragraphRanges(input).flatMap((paragraph) =>
+    splitLargeParagraph(input, paragraph, maxChunkSize),
+  );
   const mergedChunks = mergeSmallChunks(input, initialChunks, { maxChunkSize, minChunkSize });
   const chunkCount = mergedChunks.length;
 
@@ -42,40 +44,21 @@ export function chunkText(input: string, options: ChunkTextOptions = {}): TextCh
 
 function mergeSmallChunks(
   input: string,
-  chunks: Array<Omit<TextChunk, "chunkIndex" | "chunkCount">>,
+  chunks: Array<Omit<TextChunk, 'chunkIndex' | 'chunkCount'>>,
   options: { maxChunkSize: number; minChunkSize: number },
-): Array<Omit<TextChunk, "chunkIndex" | "chunkCount">> {
+): Array<Omit<TextChunk, 'chunkIndex' | 'chunkCount'>> {
   if (chunks.length <= 1) {
     return chunks;
   }
 
-  const merged: Array<Omit<TextChunk, "chunkIndex" | "chunkCount">> = [];
+  const merged: Array<Omit<TextChunk, 'chunkIndex' | 'chunkCount'>> = [];
   let cursor = 0;
 
   while (cursor < chunks.length) {
-    let start = chunks[cursor].chunkStart;
-    let end = chunks[cursor].chunkEnd;
+    const start = chunks[cursor].chunkStart;
 
-    // Always try to grow chunks up to maxChunkSize.
-    while (cursor + 1 < chunks.length) {
-      const next = chunks[cursor + 1];
-      const mergedLength = next.chunkEnd - start;
-
-      if (mergedLength > options.maxChunkSize) {
-        break;
-      }
-
-      const currentLength = end - start;
-
-      // Merge if current chunk is too small, or if we can still grow without exceeding max.
-      if (currentLength < options.minChunkSize || mergedLength <= options.maxChunkSize) {
-        cursor += 1;
-        end = next.chunkEnd;
-        continue;
-      }
-
-      break;
-    }
+    cursor = lastMergeableChunk(chunks, cursor, options.maxChunkSize);
+    const end = chunks[cursor].chunkEnd;
 
     merged.push({
       chunkStart: start,
@@ -86,29 +69,55 @@ function mergeSmallChunks(
     cursor += 1;
   }
 
-  // Avoid tiny final leftovers if possible.
-  if (merged.length >= 2) {
-    const last = merged[merged.length - 1];
-    const prev = merged[merged.length - 2];
-    const lastLength = last.chunkEnd - last.chunkStart;
-
-    if (lastLength < options.minChunkSize) {
-      const mergedLength = last.chunkEnd - prev.chunkStart;
-      if (mergedLength <= options.maxChunkSize) {
-        merged.splice(merged.length - 2, 2, {
-          chunkStart: prev.chunkStart,
-          chunkEnd: last.chunkEnd,
-          content: input.slice(prev.chunkStart, last.chunkEnd),
-        });
-      }
-    }
-  }
+  mergeFinalLeftover(input, merged, options);
 
   return merged;
 }
 
-function paragraphRanges(input: string): Array<Omit<TextChunk, "chunkIndex" | "chunkCount">> {
-  const ranges: Array<Omit<TextChunk, "chunkIndex" | "chunkCount">> = [];
+function lastMergeableChunk(
+  chunks: Array<Omit<TextChunk, 'chunkIndex' | 'chunkCount'>>,
+  cursor: number,
+  maxChunkSize: number,
+): number {
+  const start = chunks[cursor].chunkStart;
+
+  while (cursor + 1 < chunks.length) {
+    if (chunks[cursor + 1].chunkEnd - start > maxChunkSize) {
+      break;
+    }
+
+    cursor += 1;
+  }
+
+  return cursor;
+}
+
+function mergeFinalLeftover(
+  input: string,
+  merged: Array<Omit<TextChunk, 'chunkIndex' | 'chunkCount'>>,
+  options: { maxChunkSize: number; minChunkSize: number },
+): void {
+  // Avoid tiny final leftovers if possible.
+  if (merged.length < 2) {
+    return;
+  }
+
+  const last = merged[merged.length - 1];
+  const prev = merged[merged.length - 2];
+  const lastLength = last.chunkEnd - last.chunkStart;
+  const mergedLength = last.chunkEnd - prev.chunkStart;
+
+  if (lastLength < options.minChunkSize && mergedLength <= options.maxChunkSize) {
+    merged.splice(merged.length - 2, 2, {
+      chunkStart: prev.chunkStart,
+      chunkEnd: last.chunkEnd,
+      content: input.slice(prev.chunkStart, last.chunkEnd),
+    });
+  }
+}
+
+function paragraphRanges(input: string): Array<Omit<TextChunk, 'chunkIndex' | 'chunkCount'>> {
+  const ranges: Array<Omit<TextChunk, 'chunkIndex' | 'chunkCount'>> = [];
   const paragraphPattern = /\S[\s\S]*?(?=(?:\r?\n\s*){2,}|$)/g;
   let match: RegExpExecArray | null;
 
@@ -134,24 +143,18 @@ function paragraphRanges(input: string): Array<Omit<TextChunk, "chunkIndex" | "c
 
 function splitLargeParagraph(
   input: string,
-  paragraph: Omit<TextChunk, "chunkIndex" | "chunkCount">,
+  paragraph: Omit<TextChunk, 'chunkIndex' | 'chunkCount'>,
   maxChunkSize: number,
-): Array<Omit<TextChunk, "chunkIndex" | "chunkCount">> {
+): Array<Omit<TextChunk, 'chunkIndex' | 'chunkCount'>> {
   if (paragraph.content.length <= maxChunkSize) {
     return [paragraph];
   }
 
-  const chunks: Array<Omit<TextChunk, "chunkIndex" | "chunkCount">> = [];
+  const chunks: Array<Omit<TextChunk, 'chunkIndex' | 'chunkCount'>> = [];
   let cursor = paragraph.chunkStart;
 
   while (cursor < paragraph.chunkEnd) {
-    const remaining = paragraph.chunkEnd - cursor;
-    let nextEnd = remaining <= maxChunkSize ? paragraph.chunkEnd : cursor + maxChunkSize;
-
-    if (nextEnd < paragraph.chunkEnd) {
-      const preferredEnd = findPreferredSplit(input, cursor, nextEnd);
-      nextEnd = preferredEnd > cursor ? preferredEnd : nextEnd;
-    }
+    const nextEnd = nextChunkEnd(input, cursor, paragraph.chunkEnd, maxChunkSize);
 
     const chunkStart = skipLeadingWhitespace(input, cursor, nextEnd);
     const chunkEnd = trimTrailingWhitespace(input, chunkStart, nextEnd);
@@ -170,9 +173,21 @@ function splitLargeParagraph(
   return chunks;
 }
 
+function nextChunkEnd(input: string, cursor: number, end: number, maxChunkSize: number): number {
+  const hardEnd = Math.min(end, cursor + maxChunkSize);
+
+  if (hardEnd === end) {
+    return end;
+  }
+
+  const preferredEnd = findPreferredSplit(input, cursor, hardEnd);
+
+  return preferredEnd > cursor ? preferredEnd : hardEnd;
+}
+
 function findPreferredSplit(input: string, start: number, hardEnd: number): number {
   for (let index = hardEnd; index > start + MIN_SPLIT_SIZE; index -= 1) {
-    if (/\s/.test(input[index - 1] ?? "")) {
+    if (/\s/.test(input[index - 1] ?? '')) {
       return index;
     }
   }
@@ -183,7 +198,7 @@ function findPreferredSplit(input: string, start: number, hardEnd: number): numb
 function skipLeadingWhitespace(input: string, start: number, end: number): number {
   let index = start;
 
-  while (index < end && /\s/.test(input[index] ?? "")) {
+  while (index < end && /\s/.test(input[index] ?? '')) {
     index += 1;
   }
 
@@ -193,7 +208,7 @@ function skipLeadingWhitespace(input: string, start: number, end: number): numbe
 function trimTrailingWhitespace(input: string, start: number, end: number): number {
   let index = end;
 
-  while (index > start && /\s/.test(input[index - 1] ?? "")) {
+  while (index > start && /\s/.test(input[index - 1] ?? '')) {
     index -= 1;
   }
 

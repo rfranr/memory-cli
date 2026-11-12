@@ -1,9 +1,9 @@
-import type { IndexDocumentCommand } from "../domain/commands.js";
-import type { DocumentChunk, IndexDocumentResult } from "../domain/entities.js";
-import type { CategoryStore, EmbeddingClient, VectorStore } from "../domain/ports.js";
-import { noopProgressReporter, type ProgressReporter } from "../shared/progress.js";
-import { chunkText } from "../shared/chunk-text.js";
-import { readInput } from "./classify-document.js";
+import type { IndexDocumentCommand } from '../domain/commands.js';
+import type { DocumentChunk, IndexDocumentResult } from '../domain/entities.js';
+import type { CategoryStore, EmbeddingClient, VectorStore } from '../domain/ports.js';
+import { noopProgressReporter, type ProgressReporter } from '../shared/progress.js';
+import { chunkText } from '../shared/chunk-text.js';
+import { readInput } from './classify-document.js';
 
 export class IndexDocumentUseCase {
   constructor(
@@ -12,12 +12,15 @@ export class IndexDocumentUseCase {
     private readonly categories: CategoryStore,
   ) {}
 
-  async execute(command: IndexDocumentCommand, progress: ProgressReporter = noopProgressReporter): Promise<IndexDocumentResult> {
+  async execute(
+    command: IndexDocumentCommand,
+    progress: ProgressReporter = noopProgressReporter,
+  ): Promise<IndexDocumentResult> {
     const content = await readInput(command.input);
     const chunks = chunkText(content);
 
     if (chunks.length === 0) {
-      throw new Error("Cannot index document: input did not contain any non-empty chunks");
+      throw new Error('Cannot index document: input did not contain any non-empty chunks');
     }
 
     progress.start(chunks.length);
@@ -31,7 +34,9 @@ export class IndexDocumentUseCase {
       const [bestMatch] = await this.categories.search(chunkEmbedding, 1);
 
       if (!bestMatch) {
-        throw new Error("Cannot index document: categories database is empty. Run `rag-cli categories sync <categories.yml>` first.");
+        throw new Error(
+          'Cannot index document: categories database is empty. Run `rag-cli categories sync <categories.yml>` first.',
+        );
       }
 
       chunksToInsert.push({

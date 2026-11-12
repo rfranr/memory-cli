@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 export interface AppConfig {
   databasePath: string;
@@ -25,24 +25,28 @@ const loadedEnvFiles = new Set<string>();
 export function buildConfig(options: ConfigOptions): AppConfig {
   loadEnvFile(options.envFile);
 
-  const embeddingDimensionsRaw = options.embeddingDimensions ?? process.env.RAG_CLI_EMBEDDING_DIMENSIONS ?? "";
+  const embeddingDimensionsRaw = options.embeddingDimensions ?? process.env.RAG_CLI_EMBEDDING_DIMENSIONS ?? '';
   const embeddingDimensions = Number.parseInt(embeddingDimensionsRaw, 10);
 
   if (!Number.isFinite(embeddingDimensions) || embeddingDimensions <= 0) {
-    throw new Error("RAG_CLI_EMBEDDING_DIMENSIONS must be a positive integer");
+    throw new Error('RAG_CLI_EMBEDDING_DIMENSIONS must be a positive integer');
   }
 
   return {
-    databasePath: options.db ?? process.env.RAG_CLI_DB ?? "./rag.sqlite",
-    categoriesDatabasePath: options.categoriesDb ?? process.env.RAG_CLI_CATEGORIES_DB ?? "./rag-categories.sqlite",
-    embeddingEndpoint: options.embeddingUrl ?? process.env.RAG_CLI_EMBEDDING_URL ?? "http://localhost:3000/embedding",
-    embeddingProvider: options.embeddingProvider ?? process.env.RAG_CLI_EMBEDDING_PROVIDER ?? "unknown",
-    embeddingModel: options.embeddingModel ?? process.env.RAG_CLI_EMBEDDING_MODEL ?? "unknown",
+    databasePath: configValue(options.db, 'RAG_CLI_DB', './rag.sqlite'),
+    categoriesDatabasePath: configValue(options.categoriesDb, 'RAG_CLI_CATEGORIES_DB', './rag-categories.sqlite'),
+    embeddingEndpoint: configValue(options.embeddingUrl, 'RAG_CLI_EMBEDDING_URL', 'http://localhost:3000/embedding'),
+    embeddingProvider: configValue(options.embeddingProvider, 'RAG_CLI_EMBEDDING_PROVIDER', 'unknown'),
+    embeddingModel: configValue(options.embeddingModel, 'RAG_CLI_EMBEDDING_MODEL', 'unknown'),
     embeddingDimensions,
   };
 }
 
-export function loadEnvFile(envFile = ".env"): void {
+function configValue(value: string | undefined, variable: string, fallback: string): string {
+  return value ?? process.env[variable] ?? fallback;
+}
+
+export function loadEnvFile(envFile = '.env'): void {
   const absolutePath = resolve(process.cwd(), envFile);
 
   if (loadedEnvFiles.has(absolutePath)) {
@@ -55,7 +59,7 @@ export function loadEnvFile(envFile = ".env"): void {
     return;
   }
 
-  const variables = parseEnvFile(readFileSync(absolutePath, "utf8"));
+  const variables = parseEnvFile(readFileSync(absolutePath, 'utf8'));
 
   for (const [key, value] of Object.entries(variables)) {
     process.env[key] ??= value;
@@ -65,10 +69,10 @@ export function loadEnvFile(envFile = ".env"): void {
 function parseEnvFile(contents: string): Record<string, string> {
   const variables: Record<string, string> = {};
 
-  for (const rawLine of contents.replace(/^\uFEFF/, "").split(/\r?\n/)) {
+  for (const rawLine of contents.replace(/^\uFEFF/, '').split(/\r?\n/)) {
     const line = rawLine.trim();
 
-    if (!line || line.startsWith("#")) {
+    if (!line || line.startsWith('#')) {
       continue;
     }
 
@@ -94,12 +98,12 @@ function parseEnvValue(rawValue: string): string {
     if (quote === '"') {
       return unquoted.replace(/\\([nrt"\\])/g, (_, escaped: string) => {
         switch (escaped) {
-          case "n":
-            return "\n";
-          case "r":
-            return "\r";
-          case "t":
-            return "\t";
+          case 'n':
+            return '\n';
+          case 'r':
+            return '\r';
+          case 't':
+            return '\t';
           default:
             return escaped;
         }
@@ -109,5 +113,5 @@ function parseEnvValue(rawValue: string): string {
     return unquoted;
   }
 
-  return value.replace(/\s+#.*$/, "").trim();
+  return value.replace(/\s+#.*$/, '').trim();
 }

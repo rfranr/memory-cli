@@ -1,4 +1,4 @@
-import type { Metadata } from "./entities.js";
+import type { Metadata } from './entities.js';
 
 export interface TaxonomySyncCommand {
   taxonomyFile: string;

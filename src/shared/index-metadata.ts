@@ -1,5 +1,5 @@
-import type sqlite3 from "sqlite3";
-import type { Database } from "sqlite";
+import type sqlite3 from 'sqlite3';
+import type { Database } from 'sqlite';
 
 export type IndexMetadata = Record<string, string>;
 
@@ -19,16 +19,23 @@ export async function ensureIndexMetadata(
 
   if (rows.length === 0) {
     const entries = Object.entries(metadata);
+
     for (const [key, value] of entries) {
       await db.run(`INSERT INTO index_metadata (key, value) VALUES (?, ?)`, key, value);
     }
+
     return;
   }
 
+  validateMetadata(rows, metadata, label);
+}
+
+function validateMetadata(rows: Array<{ key: string; value: string }>, metadata: IndexMetadata, label: string): void {
   const existing = new Map(rows.map((row) => [row.key, row.value] as const));
 
   for (const [key, expected] of Object.entries(metadata)) {
     const actual = existing.get(key);
+
     if (actual === undefined) {
       throw new Error(`${label} metadata mismatch: missing key '${key}' in index_metadata`);
     }

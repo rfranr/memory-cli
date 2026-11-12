@@ -29,7 +29,7 @@ export function createStderrProgressReporter(label: string): ProgressReporter {
       current = nextTotal;
       total = nextTotal;
       writeProgress(label, current, total);
-      process.stderr.write("\n");
+      process.stderr.write('\n');
     },
   };
 }

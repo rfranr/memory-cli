@@ -1,10 +1,10 @@
-import sqlite3 from "sqlite3";
-import { open, type Database } from "sqlite";
-import type { CategoryEntry, CategoryMatch } from "../../domain/entities.js";
-import type { CategoryStore } from "../../domain/ports.js";
-import type { IndexMetadata } from "../../shared/index-metadata.js";
-import { ensureIndexMetadata } from "../../shared/index-metadata.js";
-import { cosineSimilarity } from "../../shared/cosine.js";
+import sqlite3 from 'sqlite3';
+import { open, type Database } from 'sqlite';
+import type { CategoryEntry, CategoryMatch } from '../../domain/entities.js';
+import type { CategoryStore } from '../../domain/ports.js';
+import type { IndexMetadata } from '../../shared/index-metadata.js';
+import { ensureIndexMetadata } from '../../shared/index-metadata.js';
+import { cosineSimilarity } from '../../shared/cosine.js';
 
 interface StoredCategoryRow {
   id: string;
@@ -42,11 +42,12 @@ export class SqliteCategoryStore implements CategoryStore {
       CREATE INDEX IF NOT EXISTS idx_categories_path ON categories(path);
     `);
 
-    await ensureIndexMetadata(this.db, this.metadata, "categories index");
+    await ensureIndexMetadata(this.db, this.metadata, 'categories index');
   }
 
   async upsert(category: CategoryEntry, embedding: number[]): Promise<void> {
     const db = this.ensureDb();
+
     await db.run(
       `INSERT INTO categories (id, path, description, examples_json, embedding_json, updated_at)
        VALUES (?, ?, ?, ?, ?, datetime('now'))
@@ -80,6 +81,7 @@ export class SqliteCategoryStore implements CategoryStore {
   async count(): Promise<number> {
     const db = this.ensureDb();
     const row = await db.get<CountRow>(`SELECT count(*) AS count FROM categories`);
+
     return row?.count ?? 0;
   }
 
@@ -90,7 +92,7 @@ export class SqliteCategoryStore implements CategoryStore {
 
   private ensureDb(): Database<sqlite3.Database, sqlite3.Statement> {
     if (!this.db) {
-      throw new Error("Category store is not initialized");
+      throw new Error('Category store is not initialized');
     }
 
     return this.db;

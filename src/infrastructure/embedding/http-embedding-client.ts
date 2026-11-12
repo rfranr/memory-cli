@@ -1,12 +1,12 @@
-import type { EmbeddingClient } from "../../domain/ports.js";
+import type { EmbeddingClient } from '../../domain/ports.js';
 
 export class HttpEmbeddingClient implements EmbeddingClient {
   constructor(private readonly endpoint: string) {}
 
   async embed(input: string): Promise<number[]> {
     const response = await fetch(this.endpoint, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ input, text: input }),
     });
 
@@ -42,11 +42,11 @@ function extractEmbedding(payload: unknown): number[] | undefined {
 }
 
 function isEmbedding(value: unknown): value is number[] {
-  return Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === "number");
+  return Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === 'number');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function describePayload(payload: unknown): string {
@@ -55,7 +55,7 @@ function describePayload(payload: unknown): string {
   }
 
   if (isRecord(payload)) {
-    return `object(keys=${Object.keys(payload).join(",") || "none"})`;
+    return `object(keys=${Object.keys(payload).join(',') || 'none'})`;
   }
 
   return typeof payload;

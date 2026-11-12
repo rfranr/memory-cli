@@ -1,5 +1,5 @@
-import type { AppStats } from "../domain/entities.js";
-import type { CategoryStore, VectorStore } from "../domain/ports.js";
+import type { AppStats } from '../domain/entities.js';
+import type { CategoryStore, VectorStore } from '../domain/ports.js';
 
 export class StatsUseCase {
   constructor(
