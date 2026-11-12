@@ -62,6 +62,12 @@ export class IndexDocumentUseCase {
       progress.update(processed, chunks.length);
     }
 
+    if (command.dryRun) {
+      progress.done(chunks.length);
+
+      return { dryRun: true, chunks: chunks.length, ids: [], documents: chunksToInsert };
+    }
+
     const ids = await this.store.addMany(chunksToInsert);
 
     progress.done(chunks.length);

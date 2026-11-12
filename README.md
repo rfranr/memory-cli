@@ -47,6 +47,7 @@ This compares the input with the already-synced categories database.
 
 ```bash
 pnpm run start index assets/docs/doc.txt --metadata '{"fileName":"assets/docs/doc.txt"}'
+pnpm run start index assets/docs/doc.txt --dry-run --metadata '{"fileName":"assets/docs/doc.txt"}'
 pnpm run start index https://example.com/article --metadata '{"url":"https://example.com/article"}'
 ```
 
@@ -65,6 +66,12 @@ Example output:
   "ids": [1, 2, 3]
 }
 ```
+
+Use `index --dry-run` to validate, chunk, embed, and classify the input without
+writing databases. It requires an existing synced categories database and the
+embedding service. JSON output includes `dryRun: true`, the chunk count, empty
+`ids`, and prepared `documents` with content, embeddings, category, and metadata.
+The documents database is not opened or created; categories are read-only.
 
 ### 4. Search indexed documents
 

@@ -110,3 +110,15 @@ Search results should return content plus metadata such as:
 - Keep the CLI focused on local-first taxonomy classification, indexing, and semantic search.
 - Add tests for new features and functionality. 
 - Update documentation in the README.md when necessary.
+
+## Quality verification
+
+After modifying application or test code:
+
+1. Load the `quality-gates` skill.
+2. Run the relevant quality checks.
+3. Fix blocking violations without weakening quality policies.
+4. Run the existing tests and typecheck.
+5. Report the results and any checks not executed.
+
+Do not run quality gates for documentation-only changes unless relevant.

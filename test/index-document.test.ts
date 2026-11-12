@@ -109,6 +109,35 @@ describe('IndexDocumentUseCase', () => {
     });
   });
 
+  it('previews the same prepared chunks without writing', async () => {
+    const embeddings = makeEmbeddings();
+    const categories = makeCategoryStore({ category: { id: 'notes', path: 'Notes', examples: [] }, score: 1 });
+    const store = makeVectorStore();
+    const useCase = new IndexDocumentUseCase(embeddings as never, store as never, categories as never);
+    const command = { input: 'A paragraph. '.repeat(500), metadata: { fileName: 'notes.txt' } };
+    const preview = await useCase.execute({ ...command, dryRun: true });
+
+    expect(preview.dryRun).toBe(true);
+    expect(preview.chunks).toBeGreaterThan(1);
+    expect(preview.ids).toEqual([]);
+    expect(store.addMany).not.toHaveBeenCalled();
+    expect(store.add).not.toHaveBeenCalled();
+    await useCase.execute(command);
+    expect(preview.documents).toEqual(store.records);
+  });
+
+  it('rejects empty input during a dry run without writing', async () => {
+    const store = makeVectorStore();
+    const useCase = new IndexDocumentUseCase(
+      makeEmbeddings() as never,
+      store as never,
+      makeCategoryStore(undefined) as never,
+    );
+
+    await expect(useCase.execute({ input: '   ', metadata: {}, dryRun: true })).rejects.toThrow('non-empty chunks');
+    expect(store.addMany).not.toHaveBeenCalled();
+  });
+
   it('fails clearly when the categories database is empty', async () => {
     const embeddings = makeEmbeddings();
     const categories = makeCategoryStore(undefined);

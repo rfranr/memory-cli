@@ -44,6 +44,8 @@ export interface FindMatch {
 }
 
 export interface IndexDocumentResult {
+  dryRun?: boolean;
+  documents?: DocumentChunk[];
   chunks: number;
   ids: number[];
 }

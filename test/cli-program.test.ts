@@ -28,6 +28,24 @@ describe('CLI commands', () => {
     expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ chunks: 2, ids: [11, 12] }, null, 2));
   });
 
+  it('forwards --dry-run and prints the preview', async () => {
+    const preview = { dryRun: true, chunks: 1, ids: [], documents: [] };
+    const indexDocument = vi.fn(async () => preview);
+    const appFactory = vi.fn(async () => ({
+      syncTaxonomy: vi.fn(),
+      classify: vi.fn(),
+      indexDocument,
+      stats: vi.fn(),
+      find: vi.fn(),
+      search: vi.fn(),
+    }));
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await buildProgram(appFactory).parseAsync(['node', 'rag-cli', 'index', 'hello', '--dry-run']);
+    expect(indexDocument).toHaveBeenCalledWith({ input: 'hello', metadata: {}, dryRun: true });
+    expect(logSpy).toHaveBeenCalledWith(JSON.stringify(preview, null, 2));
+  });
+
   it('classify does not require --taxonomy', async () => {
     const classify = vi.fn(async () => [{ score: 0.9 }]);
     const appFactory = vi.fn(async () => ({

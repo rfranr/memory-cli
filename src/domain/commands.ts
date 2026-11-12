@@ -10,6 +10,7 @@ export interface ClassifyCommand {
 }
 
 export interface IndexDocumentCommand {
+  dryRun?: boolean;
   input: string;
   metadata: Metadata;
 }

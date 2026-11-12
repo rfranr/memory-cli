@@ -3,7 +3,7 @@ import { open, type Database } from 'sqlite';
 import type { CategoryEntry, CategoryMatch } from '../../domain/entities.js';
 import type { CategoryStore } from '../../domain/ports.js';
 import type { IndexMetadata } from '../../shared/index-metadata.js';
-import { ensureIndexMetadata } from '../../shared/index-metadata.js';
+import { ensureIndexMetadata, validateMetadata } from '../../shared/index-metadata.js';
 import { cosineSimilarity } from '../../shared/cosine.js';
 
 interface StoredCategoryRow {
@@ -43,6 +43,19 @@ export class SqliteCategoryStore implements CategoryStore {
     `);
 
     await ensureIndexMetadata(this.db, this.metadata, 'categories index');
+  }
+
+  async initReadOnly(): Promise<void> {
+    this.db = await open({ filename: this.filename, driver: sqlite3.Database, mode: sqlite3.OPEN_READONLY });
+
+    try {
+      const rows = await this.db.all<Array<{ key: string; value: string }>>('SELECT key, value FROM index_metadata');
+
+      validateMetadata(rows, this.metadata, 'categories index');
+    } catch (error) {
+      await this.close();
+      throw error;
+    }
   }
 
   async upsert(category: CategoryEntry, embedding: number[]): Promise<void> {

@@ -30,7 +30,11 @@ export async function ensureIndexMetadata(
   validateMetadata(rows, metadata, label);
 }
 
-function validateMetadata(rows: Array<{ key: string; value: string }>, metadata: IndexMetadata, label: string): void {
+export function validateMetadata(
+  rows: Array<{ key: string; value: string }>,
+  metadata: IndexMetadata,
+  label: string,
+): void {
   const existing = new Map(rows.map((row) => [row.key, row.value] as const));
 
   for (const [key, expected] of Object.entries(metadata)) {

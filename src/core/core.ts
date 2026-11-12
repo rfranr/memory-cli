@@ -45,7 +45,7 @@ export class RagCliApp {
   }
 
   async indexDocument(command: IndexDocumentCommand): Promise<IndexDocumentResult> {
-    const { store, categories, embeddings } = await this.dependencies();
+    const { store, categories, embeddings } = await this.dependencies(command.dryRun);
 
     try {
       return await new IndexDocumentUseCase(embeddings, store, categories).execute(
@@ -92,7 +92,7 @@ export class RagCliApp {
     }
   }
 
-  private async dependencies(): Promise<{
+  private async dependencies(readOnly = false): Promise<{
     store: SqliteVectorStore;
     categories: SqliteCategoryStore;
     embeddings: HttpEmbeddingClient;
@@ -107,7 +107,11 @@ export class RagCliApp {
     const store = new SqliteVectorStore(this.config.databasePath, metadata);
     const categories = new SqliteCategoryStore(this.config.categoriesDatabasePath, metadata);
 
-    await Promise.all([store.init(), categories.init()]);
+    if (readOnly) {
+      await categories.initReadOnly();
+    } else {
+      await Promise.all([store.init(), categories.init()]);
+    }
 
     return {
       store,

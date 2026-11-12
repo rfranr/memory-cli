@@ -11,7 +11,7 @@ export interface CommonOptions {
 export interface CliApp {
   syncTaxonomy(command: { taxonomyFile: string }): Promise<number>;
   classify(command: { input: string; limit: number }): Promise<unknown>;
-  indexDocument(command: { input: string; metadata: Metadata }): Promise<unknown>;
+  indexDocument(command: { input: string; metadata: Metadata; dryRun?: boolean }): Promise<unknown>;
   stats(): Promise<unknown>;
   find(command: { file?: string; text?: string; category?: string; limit: number; offset: number }): Promise<unknown>;
   search(command: { text: string; limit: number }): Promise<unknown>;
@@ -24,6 +24,7 @@ interface ClassifyOptions extends CommonOptions {
 }
 
 interface IndexOptions extends CommonOptions {
+  dryRun?: boolean;
   metadata?: string;
 }
 
@@ -94,11 +95,13 @@ function registerDocumentCommands(program: Command, createApp: AppFactory): void
     .description('Embed and persist text/file with user metadata and the best category from the categories DB')
     .argument('<input>', 'Text to index, or a file path')
     .option('-m, --metadata <json>', 'Additional JSON metadata', '{}')
+    .option('--dry-run', 'Preview prepared chunks without changing persisted state')
     .action(async (input: string, options: IndexOptions) => {
       const app = await createApp(resolveCommonOptions(program, options));
       const result = await app.indexDocument({
         input,
         metadata: parseMetadata(options.metadata),
+        ...(options.dryRun ? { dryRun: true } : {}),
       });
 
       console.log(JSON.stringify(result, null, 2));
