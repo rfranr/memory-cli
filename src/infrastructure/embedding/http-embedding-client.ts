@@ -1,13 +1,17 @@
 import type { EmbeddingClient } from '../../domain/ports.js';
 
 export class HttpEmbeddingClient implements EmbeddingClient {
-  constructor(private readonly endpoint: string) {}
+  constructor(
+    private readonly endpoint: string,
+    private readonly provider?: string,
+    private readonly model?: string,
+  ) {}
 
   async embed(input: string): Promise<number[]> {
     const response = await fetch(this.endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ input, text: input }),
+      body: JSON.stringify(this.provider === 'ollama' ? { model: this.model, input } : { input, text: input }),
     });
 
     if (!response.ok) {
@@ -38,7 +42,7 @@ function extractEmbedding(payload: unknown): number[] | undefined {
     return undefined;
   }
 
-  return extractEmbedding(payload.embedding) ?? extractEmbedding(payload.data);
+  return extractEmbedding(payload.embedding) ?? extractEmbedding(payload.embeddings) ?? extractEmbedding(payload.data);
 }
 
 function isEmbedding(value: unknown): value is number[] {

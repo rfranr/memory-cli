@@ -21,7 +21,19 @@ RAG_CLI_EMBEDDING_MODEL=granite-embedding-107m-multilingual
 RAG_CLI_EMBEDDING_DIMENSIONS=384
 ```
 
-The embedding endpoint must accept `POST /embedding`.
+For llama.cpp, use an endpoint accepting `POST /embedding`. For Ollama, configure:
+
+```dotenv
+RAG_CLI_EMBEDDING_PROVIDER=ollama
+RAG_CLI_EMBEDDING_URL=http://localhost:11434/api/embed
+RAG_CLI_EMBEDDING_MODEL=bge-m3
+RAG_CLI_EMBEDDING_DIMENSIONS=1024
+```
+
+The configured model must be available in Ollama (for example, run `ollama pull bge-m3`).
+Requests use the configured URL unchanged. Ollama requests send `model` and `input`
+and read the first vector from `embeddings`; llama.cpp request and response formats
+remain supported.
 
 ## Basic usage
 

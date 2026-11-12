@@ -116,7 +116,11 @@ export class RagCliApp {
     return {
       store,
       categories,
-      embeddings: new HttpEmbeddingClient(this.config.embeddingEndpoint),
+      embeddings: new HttpEmbeddingClient(
+        this.config.embeddingEndpoint,
+        this.config.embeddingProvider,
+        this.config.embeddingModel,
+      ),
     };
   }
 
