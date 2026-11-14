@@ -9,8 +9,6 @@ describe('CLI commands', () => {
   it('index prints chunk-aware results', async () => {
     const indexDocument = vi.fn(async () => ({ chunks: 2, ids: [11, 12] }));
     const appFactory = vi.fn(async () => ({
-      syncTaxonomy: vi.fn(),
-      classify: vi.fn(),
       indexDocument,
       stats: vi.fn(),
       find: vi.fn(),
@@ -32,8 +30,6 @@ describe('CLI commands', () => {
     const preview = { dryRun: true, chunks: 1, ids: [], documents: [] };
     const indexDocument = vi.fn(async () => preview);
     const appFactory = vi.fn(async () => ({
-      syncTaxonomy: vi.fn(),
-      classify: vi.fn(),
       indexDocument,
       stats: vi.fn(),
       find: vi.fn(),
@@ -46,50 +42,20 @@ describe('CLI commands', () => {
     expect(logSpy).toHaveBeenCalledWith(JSON.stringify(preview, null, 2));
   });
 
-  it('classify does not require --taxonomy', async () => {
-    const classify = vi.fn(async () => [{ score: 0.9 }]);
-    const appFactory = vi.fn(async () => ({
-      syncTaxonomy: vi.fn(),
-      classify,
-      indexDocument: vi.fn(),
-      stats: vi.fn(),
-      find: vi.fn(),
-      search: vi.fn(),
-    }));
-    const program = buildProgram(appFactory);
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  it('exposes only retrieval commands and options', () => {
+    const program = buildProgram();
 
-    await program.parseAsync(['node', 'rag-cli', 'classify', 'hello world', '--limit', '2']);
-
-    expect(classify).toHaveBeenCalledWith({ input: 'hello world', limit: 2 });
-    expect(logSpy).toHaveBeenCalledWith(JSON.stringify([{ score: 0.9 }], null, 2));
-  });
-
-  it('categories sync forwards the taxonomy file path', async () => {
-    const syncTaxonomy = vi.fn(async () => 3);
-    const appFactory = vi.fn(async () => ({
-      syncTaxonomy,
-      classify: vi.fn(),
-      indexDocument: vi.fn(),
-      stats: vi.fn(),
-      find: vi.fn(),
-      search: vi.fn(),
-    }));
-    const program = buildProgram(appFactory);
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-    await program.parseAsync(['node', 'rag-cli', 'categories', 'sync', 'assets/taxonomy/categories.yml']);
-
-    expect(syncTaxonomy).toHaveBeenCalledWith({ taxonomyFile: 'assets/taxonomy/categories.yml' });
-    expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ categories: 3 }, null, 2));
+    expect(program.commands.map((command) => command.name())).toEqual(['index', 'stats', 'find', 'search']);
+    expect(program.options.map((option) => option.long)).not.toContain('--categories-db');
+    expect(
+      program.commands.find((command) => command.name() === 'find')?.options.map((option) => option.long),
+    ).not.toContain('--category');
   });
 });
 
 describe('find command', () => {
   it('find requires at least one filter', async () => {
     const appFactory = vi.fn(async () => ({
-      syncTaxonomy: vi.fn(),
-      classify: vi.fn(),
       indexDocument: vi.fn(),
       stats: vi.fn(),
       find: vi.fn(),
@@ -98,7 +64,7 @@ describe('find command', () => {
     const program = buildProgram(appFactory);
 
     await expect(program.parseAsync(['node', 'rag-cli', 'find'])).rejects.toThrow(
-      'find requires at least one filter: --file, --text, or --category',
+      'find requires at least one filter: --file or --text',
     );
   });
 
@@ -112,17 +78,11 @@ describe('find command', () => {
           id: 1,
           source: 'assets/docs/doc.txt',
           content: 'pipeline data',
-          taxonomy: {
-            category: 'llms',
-            taxonomy: 'Technology / AI / LLMs',
-            metadata: { fileName: 'doc.txt', chunkIndex: 0 },
-          },
+          metadata: { fileName: 'doc.txt', chunkIndex: 0 },
         },
       ],
     }));
     const appFactory = vi.fn(async () => ({
-      syncTaxonomy: vi.fn(),
-      classify: vi.fn(),
       indexDocument: vi.fn(),
       stats: vi.fn(),
       find,
@@ -133,7 +93,7 @@ describe('find command', () => {
 
     await program.parseAsync(['node', 'rag-cli', 'find', '--text', 'pipeline']);
 
-    expect(find).toHaveBeenCalledWith({ file: undefined, text: 'pipeline', category: undefined, limit: 20, offset: 0 });
+    expect(find).toHaveBeenCalledWith({ file: undefined, text: 'pipeline', limit: 20, offset: 0 });
     expect(logSpy).toHaveBeenCalledWith(
       JSON.stringify(
         {
@@ -145,11 +105,7 @@ describe('find command', () => {
               id: 1,
               source: 'assets/docs/doc.txt',
               content: 'pipeline data',
-              taxonomy: {
-                category: 'llms',
-                taxonomy: 'Technology / AI / LLMs',
-                metadata: { fileName: 'doc.txt', chunkIndex: 0 },
-              },
+              metadata: { fileName: 'doc.txt', chunkIndex: 0 },
             },
           ],
         },

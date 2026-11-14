@@ -3,25 +3,18 @@ import type { Metadata } from '../domain/entities.js';
 
 export interface CommonOptions {
   db?: string;
-  categoriesDb?: string;
   embeddingUrl?: string;
   envFile?: string;
 }
 
 export interface CliApp {
-  syncTaxonomy(command: { taxonomyFile: string }): Promise<number>;
-  classify(command: { input: string; limit: number }): Promise<unknown>;
   indexDocument(command: { input: string; metadata: Metadata; dryRun?: boolean }): Promise<unknown>;
   stats(): Promise<unknown>;
-  find(command: { file?: string; text?: string; category?: string; limit: number; offset: number }): Promise<unknown>;
+  find(command: { file?: string; text?: string; limit: number; offset: number }): Promise<unknown>;
   search(command: { text: string; limit: number }): Promise<unknown>;
 }
 
 export type AppFactory = (options: CommonOptions) => Promise<CliApp> | CliApp;
-
-interface ClassifyOptions extends CommonOptions {
-  limit?: string;
-}
 
 interface IndexOptions extends CommonOptions {
   dryRun?: boolean;
@@ -31,7 +24,6 @@ interface IndexOptions extends CommonOptions {
 interface FindOptions extends CommonOptions {
   file?: string;
   text?: string;
-  category?: string;
   limit?: string;
   offset?: string;
 }
@@ -45,54 +37,22 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
 
   program
     .name('rag-cli')
-    .description('Sync taxonomy categories, index categorized content, and search nearest occurrences using embeddings')
+    .description('Index content and search nearest occurrences using embeddings')
     .version('1.0.0')
     .option('--db <path>', 'SQLite documents database path')
-    .option('--categories-db <path>', 'SQLite categories database path')
     .option('--embedding-url <url>', 'POST /embedding endpoint URL')
     .option('--env-file <path>', '.env file path', '.env');
 
-  registerTaxonomyCommand(program, createApp);
   registerDocumentCommands(program, createApp);
   registerSearchCommands(program, createApp);
 
   return program;
 }
 
-function registerTaxonomyCommand(program: Command, createApp: AppFactory): void {
-  const categories = program.command('categories').description('Manage the categories embedding database');
-
-  categories
-    .command('sync')
-    .description('Read the source-of-truth categories.yml and upsert category embeddings')
-    .argument('<taxonomy-file>', 'Taxonomy YAML file, for example assets/taxonomy/categories.yml')
-    .action(async (taxonomyFile: string, options: CommonOptions) => {
-      const app = await createApp(resolveCommonOptions(program, options));
-      const count = await app.syncTaxonomy({ taxonomyFile });
-
-      console.log(JSON.stringify({ categories: count }, null, 2));
-    });
-}
-
 function registerDocumentCommands(program: Command, createApp: AppFactory): void {
   program
-    .command('classify')
-    .description('Classify text/file against the already-synced categories database')
-    .argument('<input>', 'Text to classify, or a file path')
-    .option('-l, --limit <number>', 'Maximum category matches', '5')
-    .action(async (input: string, options: ClassifyOptions) => {
-      const app = await createApp(resolveCommonOptions(program, options));
-      const matches = await app.classify({
-        input,
-        limit: Number.parseInt(options.limit ?? '5', 10),
-      });
-
-      console.log(JSON.stringify(matches, null, 2));
-    });
-
-  program
     .command('index')
-    .description('Embed and persist text/file with user metadata and the best category from the categories DB')
+    .description('Embed and persist text/file chunks with user metadata')
     .argument('<input>', 'Text to index, or a file path')
     .option('-m, --metadata <json>', 'Additional JSON metadata', '{}')
     .option('--dry-run', 'Preview prepared chunks without changing persisted state')
@@ -110,7 +70,7 @@ function registerDocumentCommands(program: Command, createApp: AppFactory): void
   program
     .command('stats')
     .alias('inspect')
-    .description('Show database stats for documents and categories')
+    .description('Show document and chunk counts')
     .action(async (options: CommonOptions) => {
       const app = await createApp(resolveCommonOptions(program, options));
       const stats = await app.stats();
@@ -122,10 +82,9 @@ function registerDocumentCommands(program: Command, createApp: AppFactory): void
 function registerSearchCommands(program: Command, createApp: AppFactory): void {
   program
     .command('find')
-    .description('Filter indexed documents and chunks by file, text, or category')
+    .description('Filter indexed documents and chunks by file or text')
     .option('--file <value>', 'Filter by source file/path')
     .option('--text <value>', 'Filter by stored text content')
-    .option('--category <value>', 'Filter by category id or name')
     .option('-l, --limit <number>', 'Maximum matches', '20')
     .option('-o, --offset <number>', 'Result offset', '0')
     .action(async (options: FindOptions) => {
@@ -134,7 +93,6 @@ function registerSearchCommands(program: Command, createApp: AppFactory): void {
       const result = await app.find({
         file: options.file,
         text: options.text,
-        category: options.category,
         limit: Number.parseInt(options.limit ?? '20', 10),
         offset: Number.parseInt(options.offset ?? '0', 10),
       });
@@ -160,7 +118,6 @@ function resolveCommonOptions(program: Command, options: CommonOptions): CommonO
 
   return {
     db: options.db ?? globalOptions.db,
-    categoriesDb: options.categoriesDb ?? globalOptions.categoriesDb,
     embeddingUrl: options.embeddingUrl ?? globalOptions.embeddingUrl,
     envFile: options.envFile ?? globalOptions.envFile,
   };
@@ -177,8 +134,8 @@ export function parseMetadata(value = '{}'): Metadata {
 }
 
 function validateFindOptions(options: FindOptions): void {
-  if (!options.file && !options.text && !options.category) {
-    throw new Error('find requires at least one filter: --file, --text, or --category');
+  if (!options.file && !options.text) {
+    throw new Error('find requires at least one filter: --file or --text');
   }
 }
 

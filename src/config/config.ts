@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 
 export interface AppConfig {
   databasePath: string;
-  categoriesDatabasePath: string;
   embeddingEndpoint: string;
   embeddingProvider: string;
   embeddingModel: string;
@@ -12,7 +11,6 @@ export interface AppConfig {
 
 export interface ConfigOptions {
   db?: string;
-  categoriesDb?: string;
   embeddingUrl?: string;
   embeddingProvider?: string;
   embeddingModel?: string;
@@ -34,7 +32,6 @@ export function buildConfig(options: ConfigOptions): AppConfig {
 
   return {
     databasePath: configValue(options.db, 'RAG_CLI_DB', './rag.sqlite'),
-    categoriesDatabasePath: configValue(options.categoriesDb, 'RAG_CLI_CATEGORIES_DB', './rag-categories.sqlite'),
     embeddingEndpoint: configValue(options.embeddingUrl, 'RAG_CLI_EMBEDDING_URL', 'http://localhost:3000/embedding'),
     embeddingProvider: configValue(options.embeddingProvider, 'RAG_CLI_EMBEDDING_PROVIDER', 'unknown'),
     embeddingModel: configValue(options.embeddingModel, 'RAG_CLI_EMBEDDING_MODEL', 'unknown'),

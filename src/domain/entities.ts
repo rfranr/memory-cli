@@ -1,29 +1,10 @@
 export type Metadata = Record<string, string | number | boolean | null>;
 
-export interface CategoryEntry {
-  id: string;
-  path: string;
-  description?: string;
-  examples: string[];
-}
-
-export interface CategoryMatch {
-  category: CategoryEntry;
-  score: number;
-}
-
-export interface TaxonomyEntry {
-  category: string;
-  taxonomy: string;
-  description?: string;
-  metadata: Metadata;
-}
-
 export interface DocumentChunk {
   id?: number;
   source: string;
   content: string;
-  taxonomy: TaxonomyEntry;
+  metadata: Metadata;
   embedding: number[];
   createdAt?: string;
 }
@@ -32,7 +13,7 @@ export interface SearchMatch {
   id: number;
   source: string;
   content: string;
-  taxonomy: TaxonomyEntry;
+  metadata: Metadata;
   score: number;
 }
 
@@ -40,7 +21,7 @@ export interface FindMatch {
   id: number;
   source: string;
   content: string;
-  taxonomy: TaxonomyEntry;
+  metadata: Metadata;
 }
 
 export interface IndexDocumentResult {
@@ -50,25 +31,14 @@ export interface IndexDocumentResult {
   ids: number[];
 }
 
-export interface CategoryChunkCount {
-  category: string;
-  chunks: number;
-}
-
 export interface DocumentStats {
   chunks: number;
   sources: number;
-  categories: number;
-  byCategory: CategoryChunkCount[];
 }
 
 export interface AppStats {
   documentsDb: string;
-  categoriesDb: string;
   documents: DocumentStats;
-  categories: {
-    synced: number;
-  };
 }
 
 export interface FindResult {

@@ -1,6 +1,8 @@
 # RAG-CLI
 
-Local CLI for taxonomy-based document classification, indexing, and semantic search using embeddings.
+Local CLI for document indexing and semantic search using embeddings.
+
+Documents → Chunks → Embeddings → Vector Store → Search
 
 ## Setup
 
@@ -14,7 +16,6 @@ Configure `.env`:
 
 ```bash
 RAG_CLI_DB=./rag.sqlite
-RAG_CLI_CATEGORIES_DB=./rag-categories.sqlite
 RAG_CLI_EMBEDDING_PROVIDER=llama.cpp
 RAG_CLI_EMBEDDING_URL=http://localhost:8080/embedding
 RAG_CLI_EMBEDDING_MODEL=granite-embedding-107m-multilingual
@@ -37,25 +38,7 @@ remain supported.
 
 ## Basic usage
 
-### 1. Sync categories
-
-`categories.yml` is the source of truth for categories.
-
-```bash
-pnpm run start categories sync assets/taxonomy/categories.yml
-```
-
-This embeds every category and stores it in the categories database.
-
-### 2. Classify a text or file
-
-```bash
-pnpm run start classify assets/docs/doc.txt
-```
-
-This compares the input with the already-synced categories database.
-
-### 3. Index a text, file, or URL
+### 1. Index a text, file, or URL
 
 ```bash
 pnpm run start index assets/docs/doc.txt --metadata '{"fileName":"assets/docs/doc.txt"}'
@@ -66,7 +49,6 @@ pnpm run start index https://example.com/article --metadata '{"url":"https://exa
 This splits the document into chunks and stores each chunk in the documents database with:
 
 - chunk embedding
-- best matching category
 - user metadata
 - chunk metadata such as `chunkIndex`, `chunkCount`, `chunkStart`, and `chunkEnd`
 
@@ -79,21 +61,22 @@ Example output:
 }
 ```
 
-Use `index --dry-run` to validate, chunk, embed, and classify the input without
-writing databases. It requires an existing synced categories database and the
-embedding service. JSON output includes `dryRun: true`, the chunk count, empty
-`ids`, and prepared `documents` with content, embeddings, category, and metadata.
-The documents database is not opened or created; categories are read-only.
+Use `index --dry-run` to validate, chunk, and embed the input without opening or
+creating a database. Only the embedding service is required. JSON output includes
+`dryRun: true`, the chunk count, empty `ids`, and prepared `documents` with source,
+content, embeddings, and metadata. No taxonomy initialization is needed.
 
-### 4. Search indexed documents
+### 2. Search indexed documents
 
 ```bash
 pnpm run start search "Microsoft BASIC" --limit 5
 ```
 
-Search returns the best scoring indexed texts with category and metadata (KNN via sqlite-vec).
+Search embeds the query and retrieves document chunks using sqlite-vec KNN,
+sorted by descending cosine similarity. Each result includes `id`, `source`,
+`content`, top-level `metadata` (all user and chunk metadata), and `score`.
 
-### 5. Inspect database stats
+### 3. Inspect database stats
 
 ```bash
 pnpm run start stats
@@ -105,33 +88,40 @@ Or:
 pnpm run start inspect
 ```
 
-This prints a JSON summary of the documents and categories databases.
+This prints `documentsDb` and `documents: { chunks, sources }`.
 
-### 6. Find indexed chunks by filter
+### 4. Find indexed chunks by filter
 
 ```bash
 pnpm run start find --file machinelearning
 pnpm run start find --text pipeline
-pnpm run start find --category llms
 ```
 
 You can combine filters and control pagination with `--limit` and `--offset`.
 
-## Taxonomy format
+## Compatibility
 
-Example:
+Taxonomy classification has been removed: `categories sync`, `classify`,
+`--categories-db`, `RAG_CLI_CATEGORIES_DB`, and `find --category` are no longer used.
+Results and dry-run documents now expose `metadata` directly, not `taxonomy.metadata`.
+Category distribution and synchronization counts are no longer returned by stats.
 
-```yaml
-version: 1
+Existing document databases work without rebuilding: IDs, source references,
+content, metadata, embeddings, and vector rows are retained. Legacy classification
+columns and indexes remain untouched; new rows in legacy tables use empty strings
+for required classification columns. Old classification scores remain in stored
+metadata; the application does not interpret them. New databases have no classification
+columns or indexes. Embedding identity/dimension validation is unchanged.
 
-categories:
-  - id: software-architecture
-    path: "Tecnologia / Desenvolupament / Arquitectura"
-    description: "Notes sobre disseny de software."
-    examples:
-      - "Clean Architecture"
-      - "DDD"
-```
+No automatic migration, deletion, or re-embedding occurs. Separate category database
+files and user taxonomy YAML files are never opened or removed. You may retain them
+as archives. If you want a clean schema, back up the original database and explicitly
+index your source documents into a new `--db` path; keep the original until you have
+verified retrieval. Re-indexing appends chunks, so avoid doing it into the original
+unless duplicates are intended.
+
+Historical ADRs describe earlier decisions; taxonomy-specific portions are superseded
+by this simplified flow.
 
 ## Build
 

@@ -19,40 +19,28 @@ async function makeStore() {
 }
 
 describe('SqliteVectorStore.find', () => {
-  it('filters by file, text and category using AND semantics', async () => {
+  it('filters by file and text using AND semantics', async () => {
     const store = await makeStore();
 
     await store.add({
       source: 'assets/docs/machinelearning-notes.txt',
       content: 'pipeline data and llms',
       embedding: [1, 0],
-      taxonomy: {
-        category: 'llms',
-        taxonomy: 'Technology / AI / LLMs',
-        metadata: { fileName: 'machinelearning-notes.txt', chunkIndex: 0 },
-      },
+      metadata: { fileName: 'machinelearning-notes.txt', chunkIndex: 0 },
     });
 
     await store.add({
       source: 'assets/docs/machinelearning-notes.txt',
       content: 'unrelated content',
       embedding: [1, 0],
-      taxonomy: {
-        category: 'rag',
-        taxonomy: 'Technology / AI / RAG',
-        metadata: { fileName: 'machinelearning-notes.txt', chunkIndex: 1 },
-      },
+      metadata: { fileName: 'machinelearning-notes.txt', chunkIndex: 1 },
     });
 
     await store.add({
       source: 'assets/docs/other.txt',
       content: 'pipeline data',
       embedding: [1, 0],
-      taxonomy: {
-        category: 'llms',
-        taxonomy: 'Technology / AI / LLMs',
-        metadata: { fileName: 'other.txt', chunkIndex: 0 },
-      },
+      metadata: { fileName: 'other.txt', chunkIndex: 0 },
     });
 
     const fileResult = await store.find({ file: 'machinelearning', limit: 20, offset: 0 });
@@ -64,14 +52,9 @@ describe('SqliteVectorStore.find', () => {
 
     expect(textResult.total).toBe(2);
 
-    const categoryResult = await store.find({ category: 'llms', limit: 20, offset: 0 });
-
-    expect(categoryResult.total).toBe(2);
-
     const combined = await store.find({
       file: 'machinelearning',
       text: 'pipeline',
-      category: 'llms',
       limit: 20,
       offset: 0,
     });
@@ -80,10 +63,7 @@ describe('SqliteVectorStore.find', () => {
     expect(combined.matches[0]).toMatchObject({
       source: 'assets/docs/machinelearning-notes.txt',
       content: 'pipeline data and llms',
-      taxonomy: {
-        category: 'llms',
-        taxonomy: 'Technology / AI / LLMs',
-      },
+      metadata: { fileName: 'machinelearning-notes.txt', chunkIndex: 0 },
     });
 
     await store.close();

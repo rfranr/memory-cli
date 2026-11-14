@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { readInput } from '../src/application/classify-document.js';
+import { readInput } from '../src/application/read-input.js';
 
 describe('readInput INIT_CWD resolution', () => {
   it('resolves a relative file path against INIT_CWD when not found in cwd', async () => {

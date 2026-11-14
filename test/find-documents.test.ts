@@ -15,9 +15,9 @@ describe('FindDocumentsUseCase', () => {
 
     const useCase = new FindDocumentsUseCase(store as never);
 
-    await useCase.execute({ file: 'docs', text: 'pipeline', category: 'llms', limit: 20, offset: 0 });
+    await useCase.execute({ file: 'docs', text: 'pipeline', limit: 20, offset: 0 });
 
-    expect(find).toHaveBeenCalledWith({ file: 'docs', text: 'pipeline', category: 'llms', limit: 20, offset: 0 });
+    expect(find).toHaveBeenCalledWith({ file: 'docs', text: 'pipeline', limit: 20, offset: 0 });
   });
 
   it('requires at least one filter', async () => {
@@ -25,7 +25,7 @@ describe('FindDocumentsUseCase', () => {
     const useCase = new FindDocumentsUseCase(store as never);
 
     await expect(useCase.execute({ limit: 20, offset: 0 })).rejects.toThrow(
-      'find requires at least one filter: --file, --text, or --category',
+      'find requires at least one filter: --file or --text',
     );
   });
 });

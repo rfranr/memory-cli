@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { readInput } from '../src/application/classify-document.js';
+import { readInput } from '../src/application/read-input.js';
 
 describe('readInput', () => {
   it('fetches content when input is an http(s) URL', async () => {

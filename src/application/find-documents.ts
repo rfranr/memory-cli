@@ -11,7 +11,6 @@ export class FindDocumentsUseCase {
     return this.store.find({
       file: command.file,
       text: command.text,
-      category: command.category,
       limit: command.limit,
       offset: command.offset,
     });
@@ -19,8 +18,8 @@ export class FindDocumentsUseCase {
 }
 
 function validateFilters(command: FindCommand): void {
-  if (!command.file && !command.text && !command.category) {
-    throw new Error('find requires at least one filter: --file, --text, or --category');
+  if (!command.file && !command.text) {
+    throw new Error('find requires at least one filter: --file or --text');
   }
 
   if (!Number.isInteger(command.limit) || command.limit < 0) {

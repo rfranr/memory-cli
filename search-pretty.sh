@@ -7,9 +7,7 @@ NODE_NO_WARNINGS=1 node --loader ts-node/esm src/index.ts search "$QUERY" \
 ====================
 score: \(.score)
 #source: \(.source)
-taxonomy: \(.taxonomy.taxonomy)
-category: \(.taxonomy.category)
-chunk: \(.taxonomy.metadata.chunkIndex + 1)/\(.taxonomy.metadata.chunkCount)
+chunk: \(.metadata.chunkIndex + 1)/\(.metadata.chunkCount)
 
 \(.content)
 "' | less -R

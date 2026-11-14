@@ -26,14 +26,14 @@ describe('SqliteVectorStore.search (sqlite-vec KNN)', () => {
       source: 'a',
       content: 'doc a',
       embedding: [1, 0],
-      taxonomy: { category: 'c', taxonomy: 't', metadata: {} },
+      metadata: {},
     });
 
     await store.add({
       source: 'b',
       content: 'doc b',
       embedding: [0, 1],
-      taxonomy: { category: 'c', taxonomy: 't', metadata: {} },
+      metadata: {},
     });
 
     const matches = await store.search([0.9, 0.1], 2);

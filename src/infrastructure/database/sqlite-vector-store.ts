@@ -7,7 +7,7 @@ import type {
   FindMatch,
   FindResult,
   SearchMatch,
-  TaxonomyEntry,
+  Metadata,
 } from '../../domain/entities.js';
 import type { VectorStore } from '../../domain/ports.js';
 import type { IndexMetadata } from '../../shared/index-metadata.js';
@@ -17,9 +17,6 @@ interface StoredRow {
   id: number;
   source: string;
   content: string;
-  category: string;
-  taxonomy: string;
-  description: string | null;
   metadata_json: string;
   embedding_json: string;
   created_at: string;
@@ -33,15 +30,9 @@ interface CountRow {
   count: number;
 }
 
-interface ByCategoryRow {
-  category: string;
-  chunks: number;
-}
-
 interface FindFilters {
   file?: string;
   text?: string;
-  category?: string;
   limit: number;
   offset: number;
 }
@@ -49,6 +40,7 @@ interface FindFilters {
 export class SqliteVectorStore implements VectorStore {
   private db?: Database<sqlite3.Database, sqlite3.Statement>;
   private dimensions = 0;
+  private legacySchema = false;
 
   constructor(
     private readonly filename: string,
@@ -63,18 +55,18 @@ export class SqliteVectorStore implements VectorStore {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         source TEXT NOT NULL,
         content TEXT NOT NULL,
-        category TEXT NOT NULL,
-        taxonomy TEXT NOT NULL,
-        description TEXT,
         metadata_json TEXT NOT NULL,
         embedding_json TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
-      CREATE INDEX IF NOT EXISTS idx_documents_category ON documents(category);
-      CREATE INDEX IF NOT EXISTS idx_documents_taxonomy ON documents(taxonomy);
       CREATE INDEX IF NOT EXISTS idx_documents_source ON documents(source);
     `);
+
+    // Keep legacy classification columns and their data intact; never rebuild user tables.
+    const columns = await this.db.all<Array<{ name: string }>>('PRAGMA table_info(documents)');
+
+    this.legacySchema = columns.some((column) => column.name === 'taxonomy');
 
     await ensureIndexMetadata(this.db, this.metadata, 'documents index');
 
@@ -104,15 +96,13 @@ export class SqliteVectorStore implements VectorStore {
         const embedding = normalizeEmbedding(chunk.embedding, this.dimensions);
 
         const result = await db.run(
-          `INSERT INTO documents
-            (source, content, category, taxonomy, description, metadata_json, embedding_json)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          this.legacySchema
+            ? `INSERT INTO documents (source, content, metadata_json, embedding_json, category, taxonomy)
+               VALUES (?, ?, ?, ?, '', '')`
+            : `INSERT INTO documents (source, content, metadata_json, embedding_json) VALUES (?, ?, ?, ?)`,
           chunk.source,
           chunk.content,
-          chunk.taxonomy.category,
-          chunk.taxonomy.taxonomy,
-          chunk.taxonomy.description ?? null,
-          JSON.stringify(chunk.taxonomy.metadata),
+          JSON.stringify(chunk.metadata),
           JSON.stringify(chunk.embedding),
         );
 
@@ -195,20 +185,14 @@ export class SqliteVectorStore implements VectorStore {
 
   async stats(): Promise<DocumentStats> {
     const db = this.ensureDb();
-    const [chunksRow, sourcesRow, categoriesRow, byCategoryRows] = await Promise.all([
+    const [chunksRow, sourcesRow] = await Promise.all([
       db.get<CountRow>(`SELECT count(*) AS count FROM documents`),
       db.get<CountRow>(`SELECT count(DISTINCT source) AS count FROM documents`),
-      db.get<CountRow>(`SELECT count(DISTINCT category) AS count FROM documents`),
-      db.all<ByCategoryRow[]>(
-        `SELECT category, count(*) AS chunks FROM documents GROUP BY category ORDER BY chunks DESC, category ASC`,
-      ),
     ]);
 
     return {
       chunks: chunksRow?.count ?? 0,
       sources: sourcesRow?.count ?? 0,
-      categories: categoriesRow?.count ?? 0,
-      byCategory: byCategoryRows.map((row) => ({ category: row.category, chunks: row.chunks })),
     };
   }
 
@@ -226,35 +210,21 @@ export class SqliteVectorStore implements VectorStore {
   }
 
   private toSearchMatch(row: KnnRow): SearchMatch {
-    const taxonomy: TaxonomyEntry = {
-      category: row.category,
-      taxonomy: row.taxonomy,
-      description: row.description ?? undefined,
-      metadata: JSON.parse(row.metadata_json) as TaxonomyEntry['metadata'],
-    };
-
     return {
       id: row.id,
       source: row.source,
       content: row.content,
-      taxonomy,
+      metadata: JSON.parse(row.metadata_json) as Metadata,
       score: l2DistanceToCosineSimilarity(row.distance),
     };
   }
 
   private toFindMatch(row: StoredRow): FindMatch {
-    const taxonomy: TaxonomyEntry = {
-      category: row.category,
-      taxonomy: row.taxonomy,
-      description: row.description ?? undefined,
-      metadata: JSON.parse(row.metadata_json) as TaxonomyEntry['metadata'],
-    };
-
     return {
       id: row.id,
       source: row.source,
       content: row.content,
-      taxonomy,
+      metadata: JSON.parse(row.metadata_json) as Metadata,
     };
   }
 }
@@ -303,7 +273,7 @@ function buildWhereClause(filters: FindFilters): { sql: string } {
   return { sql: clauses.length > 0 ? ` WHERE ${clauses.join(' AND ')}` : '' };
 }
 
-function buildClauses(filters: Pick<FindFilters, 'file' | 'text' | 'category'>): string[] {
+function buildClauses(filters: Pick<FindFilters, 'file' | 'text'>): string[] {
   const clauses: string[] = [];
 
   if (filters.file) {
@@ -312,10 +282,6 @@ function buildClauses(filters: Pick<FindFilters, 'file' | 'text' | 'category'>):
 
   if (filters.text) {
     clauses.push(`lower(content) LIKE ? ESCAPE '\\'`);
-  }
-
-  if (filters.category) {
-    clauses.push(`lower(category) LIKE ? ESCAPE '\\'`);
   }
 
   return clauses;
@@ -330,10 +296,6 @@ function buildParams(filters: FindFilters): string[] {
 
   if (filters.text) {
     params.push(toLikePattern(filters.text));
-  }
-
-  if (filters.category) {
-    params.push(toLikePattern(filters.category));
   }
 
   return params;

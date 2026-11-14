@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { IndexDocumentUseCase } from '../src/application/index-document.js';
-import type { CategoryMatch, Metadata, SearchMatch } from '../src/domain/entities.js';
+import type { DocumentChunk, Metadata } from '../src/domain/entities.js';
 
 function makeEmbeddings() {
   const inputs: string[] = [];
@@ -15,34 +15,18 @@ function makeEmbeddings() {
   };
 }
 
-function makeCategoryStore(match: CategoryMatch | undefined) {
-  const searches: Array<{ embedding: number[]; limit: number }> = [];
-
-  return {
-    searches,
-    init: vi.fn(async () => {}),
-    upsert: vi.fn(),
-    search: vi.fn(async (embedding: number[], limit: number) => {
-      searches.push({ embedding, limit });
-
-      return match ? [match] : [];
-    }),
-    close: vi.fn(async () => {}),
-  };
-}
-
 function makeVectorStore() {
-  const records: SearchMatch[] = [];
+  const records: DocumentChunk[] = [];
 
   return {
     records,
     init: vi.fn(async () => {}),
-    add: vi.fn(async (chunk: SearchMatch) => {
+    add: vi.fn(async (chunk: DocumentChunk) => {
       records.push(chunk);
 
       return records.length;
     }),
-    addMany: vi.fn(async (chunks: SearchMatch[]) => {
+    addMany: vi.fn(async (chunks: DocumentChunk[]) => {
       const ids: number[] = [];
 
       for (const chunk of chunks) {
@@ -62,20 +46,10 @@ function makeVectorStore() {
 describe('IndexDocumentUseCase', () => {
   it('indexes each chunk independently and returns chunk ids', async () => {
     const embeddings = makeEmbeddings();
-    const bestMatch: CategoryMatch = {
-      category: {
-        id: 'software-architecture',
-        path: 'Tecnologia / Desenvolupament / Arquitectura',
-        description: 'Notes sobre disseny de software',
-        examples: ['Clean Architecture'],
-      },
-      score: 0.84,
-    };
-    const categories = makeCategoryStore(bestMatch);
     const store = makeVectorStore();
     const storeRecords = store.records;
 
-    const useCase = new IndexDocumentUseCase(embeddings as never, store as never, categories as never);
+    const useCase = new IndexDocumentUseCase(embeddings, store);
     const input = 'First paragraph.\n\nSecond paragraph.';
     const result = await useCase.execute({
       input,
@@ -85,35 +59,27 @@ describe('IndexDocumentUseCase', () => {
     // Default chunking merges small paragraphs into a larger chunk.
     expect(result).toEqual({ chunks: 1, ids: [1] });
     expect(embeddings.embed).toHaveBeenCalledTimes(1);
-    expect(categories.search).toHaveBeenCalledTimes(1);
     expect(store.addMany).toHaveBeenCalledTimes(1);
     expect(embeddings.inputs).toEqual([input]);
 
     expect(storeRecords[0]).toMatchObject({
       source: input,
       content: input,
-      taxonomy: {
-        category: 'software-architecture',
-        taxonomy: 'Tecnologia / Desenvolupament / Arquitectura',
-        description: 'Notes sobre disseny de software',
-        metadata: {
-          fileName: 'doc.txt',
-          location: 'note',
-          chunkIndex: 0,
-          chunkCount: 1,
-          chunkStart: expect.any(Number),
-          chunkEnd: expect.any(Number),
-          categoryScore: 0.84,
-        },
+      metadata: {
+        fileName: 'doc.txt',
+        location: 'note',
+        chunkIndex: 0,
+        chunkCount: 1,
+        chunkStart: expect.any(Number),
+        chunkEnd: expect.any(Number),
       },
     });
   });
 
   it('previews the same prepared chunks without writing', async () => {
     const embeddings = makeEmbeddings();
-    const categories = makeCategoryStore({ category: { id: 'notes', path: 'Notes', examples: [] }, score: 1 });
     const store = makeVectorStore();
-    const useCase = new IndexDocumentUseCase(embeddings as never, store as never, categories as never);
+    const useCase = new IndexDocumentUseCase(embeddings, store);
     const command = { input: 'A paragraph. '.repeat(500), metadata: { fileName: 'notes.txt' } };
     const preview = await useCase.execute({ ...command, dryRun: true });
 
@@ -128,38 +94,9 @@ describe('IndexDocumentUseCase', () => {
 
   it('rejects empty input during a dry run without writing', async () => {
     const store = makeVectorStore();
-    const useCase = new IndexDocumentUseCase(
-      makeEmbeddings() as never,
-      store as never,
-      makeCategoryStore(undefined) as never,
-    );
+    const useCase = new IndexDocumentUseCase(makeEmbeddings(), store);
 
     await expect(useCase.execute({ input: '   ', metadata: {}, dryRun: true })).rejects.toThrow('non-empty chunks');
     expect(store.addMany).not.toHaveBeenCalled();
-  });
-
-  it('fails clearly when the categories database is empty', async () => {
-    const embeddings = makeEmbeddings();
-    const categories = makeCategoryStore(undefined);
-    const store = {
-      init: vi.fn(async () => {}),
-      add: vi.fn(),
-      addMany: vi.fn(),
-      search: vi.fn(),
-      find: vi.fn(),
-      stats: vi.fn(),
-      close: vi.fn(async () => {}),
-    };
-
-    const useCase = new IndexDocumentUseCase(embeddings as never, store as never, categories as never);
-
-    await expect(
-      useCase.execute({
-        input: 'Only one paragraph.',
-        metadata: { fileName: 'doc.txt' } as Metadata,
-      }),
-    ).rejects.toThrow(
-      'Cannot index document: categories database is empty. Run `rag-cli categories sync <categories.yml>` first.',
-    );
   });
 });
