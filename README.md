@@ -4,6 +4,33 @@ Local CLI for document indexing and semantic search using embeddings.
 
 Documents → Chunks → Embeddings → Vector Store → Search
 
+## Explicit project memories
+
+Save user-selected memories separately from indexed documents:
+
+```bash
+memory-cli remember "Preserve deterministic tie-breaking" --scope project --project reversi
+memory-cli memories list --project reversi
+memory-cli memories get <id>
+memory-cli memories update <id> "Updated memory content"
+memory-cli memories forget <id>
+memory-cli search "tie-breaking"
+```
+
+All commands return JSON. Use the UUID returned by `remember` as `<id>`.
+Only project scope is supported; a project identifier is required and is never
+inferred from the working directory. Lists are project-isolated; semantic search
+searches all projects and documents in the selected database. Explicit search
+results carry `metadata.kind: "explicit"`, `memoryId`, `scope`, and `project`.
+
+Memories preserve Unicode, multiline content, creation time and identity on update.
+Whitespace-only content and malformed IDs are rejected. Getting a missing UUID
+returns `null`; updating it fails; forgetting it succeeds repeatedly. Updates
+replace the embedding atomically after successful embedding generation. Memories
+use the configured database and embedding model; incompatible index configuration
+is rejected. Document indexing never creates memories, and `forget --source`
+remains document-only. Global options such as `--db` apply to these commands too.
+
 ## Install the packaged CLI
 
 Requires Node.js 20 or newer. Build a local tarball (nothing is published):

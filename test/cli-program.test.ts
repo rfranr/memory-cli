@@ -42,10 +42,18 @@ describe('CLI commands', () => {
     expect(logSpy).toHaveBeenCalledWith(JSON.stringify(preview, null, 2));
   });
 
-  it('exposes only retrieval commands and options', () => {
+  it('exposes retrieval and explicit memory commands and options', () => {
     const program = buildProgram();
 
-    expect(program.commands.map((command) => command.name())).toEqual(['forget', 'index', 'stats', 'find', 'search']);
+    expect(program.commands.map((command) => command.name())).toEqual([
+      'forget',
+      'remember',
+      'memories',
+      'index',
+      'stats',
+      'find',
+      'search',
+    ]);
     expect(program.options.map((option) => option.long)).not.toContain('--categories-db');
     expect(
       program.commands.find((command) => command.name() === 'find')?.options.map((option) => option.long),

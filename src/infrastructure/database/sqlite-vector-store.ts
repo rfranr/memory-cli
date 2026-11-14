@@ -1,3 +1,4 @@
+import type { Memory } from '../../domain/memory.js';
 import { mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import sqlite3 from 'sqlite3';
@@ -67,6 +68,15 @@ export class SqliteVectorStore implements VectorStore {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS memories (
+        sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT NOT NULL UNIQUE,
+        scope TEXT NOT NULL CHECK(scope = 'project'),
+        project TEXT NOT NULL,
+        content TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      );
       CREATE INDEX IF NOT EXISTS idx_documents_source ON documents(source);
       CREATE TABLE IF NOT EXISTS forgotten_documents (identity TEXT PRIMARY KEY);
       CREATE TABLE IF NOT EXISTS document_versions (
@@ -235,6 +245,80 @@ export class SqliteVectorStore implements VectorStore {
     );
   }
 
+  async getMemory(id: string): Promise<Memory | null> {
+    const row = await this.ensureDb().get<Memory>(
+      'SELECT id, scope, project, content, createdAt, updatedAt FROM memories WHERE id = ?',
+      id,
+    );
+
+    return row ?? null;
+  }
+
+  async listMemories(project: string): Promise<Memory[]> {
+    return this.ensureDb().all<Memory[]>(
+      'SELECT id, scope, project, content, createdAt, updatedAt FROM memories WHERE project = ? ORDER BY sequence',
+      project,
+    );
+  }
+
+  async saveMemory(memory: Memory, embedding: number[], create: boolean): Promise<void> {
+    const vector = normalizeEmbedding(embedding, this.dimensions);
+    const db = this.ensureDb();
+
+    await db.exec('BEGIN IMMEDIATE');
+    try {
+      if (create) {
+        await db.run(
+          'INSERT INTO memories (id, scope, project, content, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+          memory.id,
+          memory.scope,
+          memory.project,
+          memory.content,
+          memory.createdAt,
+          memory.updatedAt,
+        );
+      } else {
+        const result = await db.run(
+          'UPDATE memories SET content = ?, updatedAt = ? WHERE id = ?',
+          memory.content,
+          memory.updatedAt,
+          memory.id,
+        );
+
+        if (!result.changes) {
+          throw new Error('Memory not found');
+        }
+      }
+      const row = await db.get<{ sequence: number }>('SELECT sequence FROM memories WHERE id = ?', memory.id);
+      const vectorId = -row!.sequence;
+
+      await db.run('DELETE FROM documents_vec WHERE rowid = ?', vectorId);
+      await db.run(
+        'INSERT INTO documents_vec(rowid, embedding) VALUES (?, vec_f32(?))',
+        vectorId,
+        JSON.stringify(vector),
+      );
+      await db.exec('COMMIT');
+    } catch (error) {
+      await db.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
+  async forgetMemory(id: string): Promise<void> {
+    const db = this.ensureDb();
+
+    await db.exec('BEGIN IMMEDIATE');
+    try {
+      await db.run('DELETE FROM documents_vec WHERE rowid = (SELECT -sequence FROM memories WHERE id = ?)', id);
+      await db.run('DELETE FROM memories WHERE id = ?', id);
+      await db.exec('COMMIT');
+    } catch (error) {
+      await db.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
   async search(queryEmbedding: number[], limit: number): Promise<SearchMatch[]> {
     const db = this.ensureDb();
     const normalized = normalizeEmbedding(queryEmbedding, this.dimensions);
@@ -258,7 +342,26 @@ export class SqliteVectorStore implements VectorStore {
     const ids = knn.map((row) => row.rowid);
     const placeholders = ids.map(() => '?').join(',');
     const docs = await db.all<StoredRow[]>(`SELECT * FROM documents WHERE id IN (${placeholders})`, ...ids);
-    const docsById = new Map(docs.map((row) => [row.id, row] as const));
+    const memories = await db.all<Array<Memory & { sequence: number }>>(
+      `SELECT * FROM memories WHERE -sequence IN (${placeholders})`,
+      ...ids,
+    );
+    const memoryRows: StoredRow[] = memories.map((memory) => ({
+      id: -memory.sequence,
+      source: `memory:${memory.id}`,
+      content: memory.content,
+      metadata_json: JSON.stringify({
+        kind: 'explicit',
+        memoryId: memory.id,
+        scope: memory.scope,
+        project: memory.project,
+        createdAt: memory.createdAt,
+        updatedAt: memory.updatedAt,
+      }),
+      embedding_json: '[]',
+      created_at: memory.createdAt,
+    }));
+    const docsById = new Map([...docs, ...memoryRows].map((row) => [row.id, row] as const));
 
     return knn
       .map(({ rowid, distance }) => {

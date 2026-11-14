@@ -10,6 +10,11 @@ export interface CommonOptions {
 export interface CliApp {
   indexDocument(command: { input: string; metadata: Metadata; dryRun?: boolean }): Promise<unknown>;
   forget?(source: string): Promise<unknown>;
+  remember?(content: string, project: string, scope: string): Promise<unknown>;
+  memoryList?(project: string): Promise<unknown>;
+  memoryGet?(id: string): Promise<unknown>;
+  memoryUpdate?(id: string, content: string): Promise<unknown>;
+  memoryForget?(id: string): Promise<unknown>;
   stats(): Promise<unknown>;
   find(command: { file?: string; text?: string; limit: number; offset: number }): Promise<unknown>;
   search(command: { text: string; limit: number }): Promise<unknown>;
@@ -54,10 +59,44 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
       console.log(JSON.stringify(await app.forget!(options.source), null, 2));
     });
 
+  registerMemoryCommands(program, createApp);
   registerDocumentCommands(program, createApp);
   registerSearchCommands(program, createApp);
 
   return program;
+}
+
+function registerMemoryCommands(program: Command, createApp: AppFactory): void {
+  const app = () => createApp(resolveCommonOptions(program, {}));
+  const output = (value: unknown) => console.log(JSON.stringify(value, null, 2));
+
+  program
+    .command('remember')
+    .argument('<content>')
+    .requiredOption('--scope <scope>', 'Memory scope (project only)')
+    .requiredOption('--project <identifier>', 'Explicit project identifier')
+    .action(async (content: string, options: { project: string; scope: string }) => {
+      output(await (await app()).remember!(content, options.project, options.scope));
+    });
+  const memories = program.command('memories').description('Manage explicit project memories');
+
+  memories
+    .command('list')
+    .requiredOption('--project <identifier>', 'Explicit project identifier')
+    .action(async (options: { project: string }) => output(await (await app()).memoryList!(options.project)));
+  memories
+    .command('get')
+    .argument('<id>')
+    .action(async (id: string) => output(await (await app()).memoryGet!(id)));
+  memories
+    .command('update')
+    .argument('<id>')
+    .argument('<content>')
+    .action(async (id: string, content: string) => output(await (await app()).memoryUpdate!(id, content)));
+  memories
+    .command('forget')
+    .argument('<id>')
+    .action(async (id: string) => output(await (await app()).memoryForget!(id)));
 }
 
 function registerDocumentCommands(program: Command, createApp: AppFactory): void {

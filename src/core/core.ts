@@ -1,3 +1,4 @@
+import { Memories } from '../application/memories.js';
 import { existsSync, statSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -91,6 +92,38 @@ export class RagCliApp {
       await store.init();
 
       return await new SearchDocumentsUseCase(this.embeddings(), store).execute(command);
+    } finally {
+      await store.close();
+    }
+  }
+
+  async remember(content: string, project: string, scope: string): Promise<unknown> {
+    return this.withMemories((memories) => memories.remember(content, project, scope));
+  }
+
+  async memoryGet(id: string): Promise<unknown> {
+    return this.withMemories((memories) => memories.get(id));
+  }
+
+  async memoryList(project: string): Promise<unknown> {
+    return this.withMemories((memories) => memories.list(project));
+  }
+
+  async memoryUpdate(id: string, content: string): Promise<unknown> {
+    return this.withMemories((memories) => memories.update(id, content));
+  }
+
+  async memoryForget(id: string): Promise<unknown> {
+    return this.withMemories((memories) => memories.forget(id));
+  }
+
+  private async withMemories<T>(action: (memories: Memories) => Promise<T>): Promise<T> {
+    const store = this.vectorStore();
+
+    try {
+      await store.init();
+
+      return await action(new Memories(store, this.embeddings()));
     } finally {
       await store.close();
     }
