@@ -9,6 +9,7 @@ export interface VectorStore {
   init(): Promise<void>;
   add(chunk: DocumentChunk): Promise<number>;
   addMany(chunks: DocumentChunk[]): Promise<number[]>;
+  isDocumentForgotten?(identity: string): Promise<boolean>;
   isDocumentCurrent(identity: string, hash: string): Promise<boolean>;
   replaceDocument(identity: string, hash: string, chunks: DocumentChunk[]): Promise<number[]>;
   search(embedding: number[], limit: number): Promise<SearchMatch[]>;

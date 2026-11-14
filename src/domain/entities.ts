@@ -25,6 +25,9 @@ export interface FindMatch {
 }
 
 export interface IndexDocumentResult {
+  skipped?: 'forgotten';
+  identity?: string;
+  results?: IndexDocumentResult[];
   dryRun?: boolean;
   documents?: DocumentChunk[];
   chunks: number;

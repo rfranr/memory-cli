@@ -13,6 +13,7 @@ import type {
 } from '../../domain/entities.js';
 import type { VectorStore } from '../../domain/ports.js';
 import type { IndexMetadata } from '../../shared/index-metadata.js';
+import { documentIdentity } from '../../application/read-input.js';
 import { ensureIndexMetadata } from '../../shared/index-metadata.js';
 
 interface StoredRow {
@@ -67,6 +68,7 @@ export class SqliteVectorStore implements VectorStore {
       );
 
       CREATE INDEX IF NOT EXISTS idx_documents_source ON documents(source);
+      CREATE TABLE IF NOT EXISTS forgotten_documents (identity TEXT PRIMARY KEY);
       CREATE TABLE IF NOT EXISTS document_versions (
         identity TEXT PRIMARY KEY,
         hash TEXT NOT NULL,
@@ -95,6 +97,34 @@ export class SqliteVectorStore implements VectorStore {
     const [id] = await this.addMany([chunk]);
 
     return id ?? 0;
+  }
+
+  async isDocumentForgotten(identity: string): Promise<boolean> {
+    return Boolean(await this.db?.get('SELECT 1 FROM forgotten_documents WHERE identity = ?', identity));
+  }
+
+  async forgetDocument(identity: string): Promise<void> {
+    const db = this.ensureDb();
+
+    await db.exec('BEGIN IMMEDIATE');
+    try {
+      await this.removeVersion(identity);
+      // Also cover historical chunks without version tracking or with source aliases.
+      const rows = await db.all<Array<{ id: number; source: string }>>('SELECT id, source FROM documents');
+
+      for (const row of rows) {
+        if (documentIdentity(row.source) === identity) {
+          await db.run('DELETE FROM documents_vec WHERE rowid = ?', row.id);
+          await db.run('DELETE FROM documents WHERE id = ?', row.id);
+        }
+      }
+      await db.run('DELETE FROM document_versions WHERE identity = ?', identity);
+      await db.run('INSERT OR IGNORE INTO forgotten_documents (identity) VALUES (?)', identity);
+      await db.exec('COMMIT');
+    } catch (error) {
+      await db.exec('ROLLBACK');
+      throw error;
+    }
   }
 
   async isDocumentCurrent(identity: string, hash: string): Promise<boolean> {
@@ -133,6 +163,11 @@ export class SqliteVectorStore implements VectorStore {
 
     await db.exec('BEGIN IMMEDIATE');
     try {
+      if (await this.containsForgotten(chunks, version?.identity)) {
+        await db.exec('COMMIT');
+
+        return [];
+      }
       if (version) {
         await this.removeVersion(version.identity);
       }
@@ -140,16 +175,7 @@ export class SqliteVectorStore implements VectorStore {
       for (const chunk of chunks) {
         const embedding = normalizeEmbedding(chunk.embedding, this.dimensions);
 
-        const result = await db.run(
-          this.legacySchema
-            ? `INSERT INTO documents (source, content, metadata_json, embedding_json, category, taxonomy)
-               VALUES (?, ?, ?, ?, '', '')`
-            : `INSERT INTO documents (source, content, metadata_json, embedding_json) VALUES (?, ?, ?, ?)`,
-          chunk.source,
-          chunk.content,
-          JSON.stringify(chunk.metadata),
-          JSON.stringify(chunk.embedding),
-        );
+        const result = await this.insertChunk(chunk);
 
         const id = result.lastID ?? 0;
 
@@ -169,6 +195,31 @@ export class SqliteVectorStore implements VectorStore {
       await db.exec('ROLLBACK');
       throw error;
     }
+  }
+
+  private async insertChunk(chunk: DocumentChunk) {
+    return this.ensureDb().run(
+      this.legacySchema
+        ? `INSERT INTO documents (source, content, metadata_json, embedding_json, category, taxonomy)
+           VALUES (?, ?, ?, ?, '', '')`
+        : `INSERT INTO documents (source, content, metadata_json, embedding_json) VALUES (?, ?, ?, ?)`,
+      chunk.source,
+      chunk.content,
+      JSON.stringify(chunk.metadata),
+      JSON.stringify(chunk.embedding),
+    );
+  }
+
+  private async containsForgotten(chunks: DocumentChunk[], identity?: string): Promise<boolean> {
+    const identities = identity ? [identity] : chunks.map((chunk) => documentIdentity(chunk.source));
+
+    for (const candidate of identities) {
+      if (await this.isDocumentForgotten(candidate)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private async saveVersion(ids: number[], version?: { identity: string; hash: string }): Promise<void> {

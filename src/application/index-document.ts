@@ -16,11 +16,16 @@ export class IndexDocumentUseCase {
     command: IndexDocumentCommand,
     progress: ProgressReporter = noopProgressReporter,
   ): Promise<IndexDocumentResult> {
-    const content = await readInput(command.input);
     const identity = documentIdentity(command.input);
+
+    if (await this.store.isDocumentForgotten?.(identity)) {
+      return { chunks: 0, ids: [], skipped: 'forgotten', identity };
+    }
+
+    const content = await readInput(command.input);
     const hash = createHash('sha256').update(content).digest('hex');
 
-    if (!command.dryRun && (await this.store.isDocumentCurrent(identity, hash))) {
+    if (await this.isCurrent(command, identity, hash)) {
       return { chunks: 0, ids: [] };
     }
 
@@ -72,11 +77,16 @@ export class IndexDocumentUseCase {
 
     progress.done(chunks.length);
 
-    return {
-      chunks: chunks.length,
-      ids,
-    };
+    return indexResult(ids, identity);
   }
+
+  private async isCurrent(command: IndexDocumentCommand, identity: string, hash: string): Promise<boolean> {
+    return !command.dryRun && this.store.isDocumentCurrent(identity, hash);
+  }
+}
+
+function indexResult(ids: number[], identity: string): IndexDocumentResult {
+  return ids.length === 0 ? { chunks: 0, ids, skipped: 'forgotten', identity } : { chunks: ids.length, ids };
 }
 
 async function embedBatch(client: EmbeddingClient, inputs: string[]): Promise<number[][]> {

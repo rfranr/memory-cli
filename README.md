@@ -132,10 +132,30 @@ The first indexing after upgrading creates a tracked version alongside any legac
 chunks; subsequent updates replace only that tracked version. Back up existing databases
 before any manual cleanup of legacy duplicates.
 
-Use `index --dry-run` to validate, chunk, and embed the input without opening or
-creating a database. Only the embedding service is required. JSON output includes
+Use `index --dry-run` to validate, chunk, and embed the input without inserting
+chunks. An existing database is opened to check tombstones; a missing database is
+not created. Only the embedding service is required when no database exists. JSON output includes
 `dryRun: true`, the chunk count, empty `ids`, and prepared `documents` with source,
 content, embeddings, and metadata. No taxonomy initialization is needed.
+
+To permanently exclude a source from the selected database:
+
+```bash
+memory-cli forget --source /path/to/document.txt
+```
+
+This atomically removes its chunks, vectors, and version entry and persists a
+tombstone. The source file is not deleted. Repeating the command is safe. Ordinary
+indexing, including changed content, dry runs, and recursive directory indexing
+(`memory-cli index /path/to/directory`), returns
+`{"chunks":0,"ids":[],"skipped":"forgotten","identity":"file:/path/to/document.txt"}`
+for excluded documents without calling the embedding service. Directory results
+include a `results` array for individual files.
+
+Forgetting uses the same identity rules as indexing: keep a file available at its
+original path when forgetting it. Renamed files and changed literal text are distinct
+identities. Tombstones apply only to the selected database; there is no restore command.
+This is logical deletion, not secure erasure of SQLite free pages, backups, or copies.
 
 ### 2. Search indexed documents
 

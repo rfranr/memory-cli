@@ -9,6 +9,7 @@ export interface CommonOptions {
 
 export interface CliApp {
   indexDocument(command: { input: string; metadata: Metadata; dryRun?: boolean }): Promise<unknown>;
+  forget?(source: string): Promise<unknown>;
   stats(): Promise<unknown>;
   find(command: { file?: string; text?: string; limit: number; offset: number }): Promise<unknown>;
   search(command: { text: string; limit: number }): Promise<unknown>;
@@ -42,6 +43,16 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
     .option('--db <path>', 'SQLite documents database path')
     .option('--embedding-url <url>', 'POST /embedding endpoint URL')
     .option('--env-file <path>', '.env file path', '.env');
+
+  program
+    .command('forget')
+    .description('Permanently exclude a source from this index without deleting the source file')
+    .requiredOption('--source <source>', 'Source file, URL, or literal text')
+    .action(async (options: CommonOptions & { source: string }) => {
+      const app = await createApp(resolveCommonOptions(program, options));
+
+      console.log(JSON.stringify(await app.forget!(options.source), null, 2));
+    });
 
   registerDocumentCommands(program, createApp);
   registerSearchCommands(program, createApp);

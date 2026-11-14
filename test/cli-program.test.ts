@@ -45,7 +45,7 @@ describe('CLI commands', () => {
   it('exposes only retrieval commands and options', () => {
     const program = buildProgram();
 
-    expect(program.commands.map((command) => command.name())).toEqual(['index', 'stats', 'find', 'search']);
+    expect(program.commands.map((command) => command.name())).toEqual(['forget', 'index', 'stats', 'find', 'search']);
     expect(program.options.map((option) => option.long)).not.toContain('--categories-db');
     expect(
       program.commands.find((command) => command.name() === 'find')?.options.map((option) => option.long),

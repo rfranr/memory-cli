@@ -1,3 +1,7 @@
+import { existsSync, statSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { documentIdentity } from '../application/read-input.js';
 import { FindDocumentsUseCase } from '../application/find-documents.js';
 import { IndexDocumentUseCase } from '../application/index-document.js';
 import { SearchDocumentsUseCase } from '../application/search-documents.js';
@@ -13,10 +17,23 @@ export class RagCliApp {
   constructor(private readonly config: AppConfig) {}
 
   async indexDocument(command: IndexDocumentCommand): Promise<IndexDocumentResult> {
+    if (existsSync(command.input) && statSync(command.input).isDirectory()) {
+      const results: IndexDocumentResult[] = [];
+
+      for (const name of (await readdir(command.input)).sort()) {
+        results.push(await this.indexDocument({ ...command, input: join(command.input, name) }));
+      }
+
+      return {
+        chunks: results.reduce((sum, result) => sum + result.chunks, 0),
+        ids: results.flatMap((result) => result.ids),
+        results,
+      };
+    }
     const store = this.vectorStore();
 
     try {
-      if (!command.dryRun) {
+      if (!command.dryRun || existsSync(this.config.databasePath)) {
         await store.init();
       }
 
@@ -24,6 +41,20 @@ export class RagCliApp {
         command,
         createStderrProgressReporter('Indexing chunks'),
       );
+    } finally {
+      await store.close();
+    }
+  }
+
+  async forget(source: string): Promise<{ forgotten: true; identity: string }> {
+    const identity = documentIdentity(source);
+    const store = this.vectorStore();
+
+    try {
+      await store.init();
+      await store.forgetDocument(identity);
+
+      return { forgotten: true, identity };
     } finally {
       await store.close();
     }
