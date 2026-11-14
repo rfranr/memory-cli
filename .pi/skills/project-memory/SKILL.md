@@ -10,7 +10,9 @@ Use `memory-cli` to consult previous development sessions.
 ## Configuration
 
 - CLI: `./node_modules/.bin/memory-cli`
-- Database: environment variable `RAG_CLI_DB`
+- Database: resolved by `memory-cli` configuration (`RAG_CLI_DB`, `.env`, or default).
+- Do not require `RAG_CLI_DB` to be explicitly exported.
+- Use the CLI's `stats` command if database configuration needs verification.
 - Run commands from the project root.
 - If the CLI or database is unavailable, report the problem. Do not create a new index.
 
