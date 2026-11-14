@@ -3,6 +3,7 @@ import type { ExtensionAPI } from '@mariozechner/pi-coding-agent';
 import { spawn } from 'node:child_process';
 import {
   closeSync,
+  existsSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -34,7 +35,6 @@ function extractConversation(sessionFile: string): string {
     if (!line.trim()) continue;
 
     const record = JSON.parse(line) as PiRecord;
-
     if (record.type !== 'message') continue;
 
     const role = record.message?.role;
@@ -61,6 +61,22 @@ function extractConversation(sessionFile: string): string {
   return output.join('\n');
 }
 
+function resolveMemoryCli(projectRoot: string) {
+  const localCli = join(projectRoot, 'node_modules/.bin/memory-cli');
+
+  if (existsSync(localCli)) {
+    return { command: localCli, args: [] as string[] };
+  }
+
+  const ownCli = join(projectRoot, 'dist/index.js');
+
+  if (basename(projectRoot) === 'memory-cli' && existsSync(ownCli)) {
+    return { command: process.execPath, args: [ownCli] };
+  }
+
+  return null;
+}
+
 export default function (pi: ExtensionAPI) {
   pi.on('session_start', (event, ctx) => {
     if (event.reason !== 'new' || !event.previousSessionFile) {
@@ -69,10 +85,17 @@ export default function (pi: ExtensionAPI) {
 
     const sessionFile = event.previousSessionFile;
     const projectRoot = ctx.cwd;
-    const memoryCli = join(
-      projectRoot,
-      'node_modules/.bin/memory-cli',
-    );
+
+    if (!existsSync(sessionFile)) {
+      return; // Sessió sense fitxer persistent
+    }
+
+    const cli = resolveMemoryCli(projectRoot);
+
+    if (!cli) {
+      console.warn('Session memory skipped: memory-cli unavailable');
+      return;
+    }
 
     try {
       const cleanText = extractConversation(sessionFile);
@@ -90,8 +113,9 @@ export default function (pi: ExtensionAPI) {
 
       try {
         const child = spawn(
-          memoryCli,
+          cli.command,
           [
+            ...cli.args,
             'index',
             outputFile,
             '--metadata',
@@ -109,12 +133,12 @@ export default function (pi: ExtensionAPI) {
         );
 
         child.on('error', (error) => {
-          console.error('Memory indexing failed to start:', error);
+          console.error('Session memory indexing failed:', error);
         });
 
         child.on('exit', (code) => {
           if (code !== 0) {
-            console.error(`Memory indexing exited with code ${code}`);
+            console.error(`Session memory indexing exited: ${code}`);
           }
         });
 
