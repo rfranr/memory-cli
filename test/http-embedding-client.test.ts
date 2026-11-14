@@ -4,6 +4,67 @@ import { HttpEmbeddingClient } from '../src/infrastructure/embedding/http-embedd
 afterEach(() => vi.unstubAllGlobals());
 
 describe('HttpEmbeddingClient', () => {
+  it('sends an Ollama array and preserves all embedding positions', async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json({
+        embeddings: [
+          [1, 0],
+          [0, 1],
+        ],
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new HttpEmbeddingClient('http://localhost/api/embed', 'ollama', 'bge-m3');
+
+    expect(await client.embedMany(['first', 'second'])).toEqual([
+      [1, 0],
+      [0, 1],
+    ]);
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost/api/embed', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'bge-m3', input: ['first', 'second'] }),
+    });
+  });
+
+  it.each([
+    { embeddings: [[1]] },
+    { embeddings: [[1], []] },
+    { embeddings: [[1], ['bad']] },
+    { data: [[1], [2]] },
+    null,
+  ])('rejects malformed batch %j', async (payload) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json(payload)),
+    );
+    await expect(
+      new HttpEmbeddingClient('http://localhost/api/embed', 'ollama', 'bge-m3').embedMany(['a', 'b']),
+    ).rejects.toThrow('invalid batch');
+  });
+
+  it('falls back to sequential single requests for other providers', async () => {
+    const fetchMock = vi.fn(async () => Response.json({ embedding: [1, 0] }));
+
+    vi.stubGlobal('fetch', fetchMock);
+    expect(await new HttpEmbeddingClient('http://localhost/embedding', 'llama.cpp').embedMany(['a', 'b'])).toEqual([
+      [1, 0],
+      [1, 0],
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('propagates batch HTTP failures', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('', { status: 500 })),
+    );
+    await expect(new HttpEmbeddingClient('http://localhost/api/embed', 'ollama').embedMany(['a'])).rejects.toThrow(
+      '500',
+    );
+  });
+
   it('sends the configured Ollama model and parses the first embedding', async () => {
     const fetchMock = vi.fn(async () =>
       Response.json({

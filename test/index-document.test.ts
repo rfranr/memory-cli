@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+import { SearchDocumentsUseCase } from '../src/application/search-documents.js';
 import { IndexDocumentUseCase } from '../src/application/index-document.js';
+import { chunkText } from '../src/shared/chunk-text.js';
 import type { DocumentChunk, Metadata } from '../src/domain/entities.js';
 
 function makeEmbeddings() {
@@ -46,6 +48,87 @@ function makeVectorStore() {
 }
 
 describe('IndexDocumentUseCase', () => {
+  it.each([3, 8, 9, 18, 64])('embeds %i chunks in ordered bounded batches', async (count) => {
+    const input = Array.from({ length: count }, (_, i) => `${i}: ${'word '.repeat(200)}`).join('\n\n');
+    const chunks = chunkText(input);
+
+    expect(chunks).toHaveLength(count);
+    const embedMany = vi.fn(async (inputs: string[]) => inputs.map((text) => [Number(text.split(':')[0]), 1]));
+    const store = makeVectorStore();
+
+    await new IndexDocumentUseCase({ embed: vi.fn(), embedMany }, store).execute({
+      input,
+      metadata: { custom: 'kept' },
+    });
+    expect(embedMany.mock.calls.map(([inputs]) => inputs.length)).toEqual(
+      Array.from({ length: Math.ceil(count / 8) }, (_, i) => Math.min(8, count - i * 8)),
+    );
+    expect(store.records).toEqual(
+      chunks.map((chunk, i) => ({
+        source: input,
+        content: chunk.content,
+        embedding: [i, 1],
+        metadata: {
+          custom: 'kept',
+          chunkIndex: i,
+          chunkCount: count,
+          chunkStart: chunk.chunkStart,
+          chunkEnd: chunk.chunkEnd,
+        },
+      })),
+    );
+  });
+
+  it.each(['count', 'malformed', 'http'])(
+    'does not replace a valid document after intermediate %s failure',
+    async (failure) => {
+      const input = Array.from({ length: 18 }, (_, i) => `${i}: ${'word '.repeat(200)}`).join('\n\n');
+      const store = makeVectorStore();
+      const previous = { source: 'old', content: 'valid', embedding: [1], metadata: {} };
+
+      store.records.push(previous);
+      const embedMany = vi.fn().mockResolvedValueOnce(Array.from({ length: 8 }, () => [1]));
+
+      if (failure === 'http') {
+        embedMany.mockRejectedValueOnce(new Error('Embedding request failed: 500'));
+      } else {
+        embedMany.mockResolvedValueOnce(failure === 'count' ? [[1]] : Array.from({ length: 8 }, () => [NaN]));
+      }
+
+      await expect(
+        new IndexDocumentUseCase({ embed: vi.fn(), embedMany }, store).execute({ input, metadata: {} }),
+      ).rejects.toThrow();
+      expect(embedMany).toHaveBeenCalledTimes(2);
+      expect(store.replaceDocument).not.toHaveBeenCalled();
+      expect(store.records).toEqual([previous]);
+    },
+  );
+
+  it('skips all embedding calls for an unchanged document', async () => {
+    const store = makeVectorStore();
+    const embeddings = { embed: vi.fn(), embedMany: vi.fn() };
+
+    store.isDocumentCurrent.mockResolvedValue(true);
+    expect(await new IndexDocumentUseCase(embeddings, store).execute({ input: 'unchanged', metadata: {} })).toEqual({
+      chunks: 0,
+      ids: [],
+    });
+    expect(embeddings.embedMany).not.toHaveBeenCalled();
+    expect(embeddings.embed).not.toHaveBeenCalled();
+    expect(store.replaceDocument).not.toHaveBeenCalled();
+  });
+
+  it('keeps semantic search on single-query embeddings', async () => {
+    const store = makeVectorStore();
+    const embeddings = { embed: vi.fn(async () => [1, 0]), embedMany: vi.fn() };
+
+    store.search.mockResolvedValue([]);
+    expect(await new SearchDocumentsUseCase(embeddings, store).execute({ text: 'query', limit: 5 })).toEqual([]);
+    expect(embeddings.embed).toHaveBeenCalledWith('query');
+    expect(embeddings.embedMany).not.toHaveBeenCalled();
+    expect(store.search).toHaveBeenCalledWith([1, 0], 5);
+  });
+
   it('indexes each chunk independently and returns chunk ids', async () => {
     const embeddings = makeEmbeddings();
     const store = makeVectorStore();

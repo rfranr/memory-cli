@@ -36,24 +36,30 @@ export class IndexDocumentUseCase {
 
     let processed = 0;
 
-    for (const chunk of chunks) {
-      const chunkEmbedding = await this.embeddings.embed(chunk.content);
+    for (let offset = 0; offset < chunks.length; offset += 8) {
+      const batch = chunks.slice(offset, offset + 8);
+      const vectors = await embedBatch(
+        this.embeddings,
+        batch.map((chunk) => chunk.content),
+      );
 
-      chunksToInsert.push({
-        source: command.input,
-        content: chunk.content,
-        embedding: chunkEmbedding,
-        metadata: {
-          ...command.metadata,
-          chunkIndex: chunk.chunkIndex,
-          chunkCount: chunk.chunkCount,
-          chunkStart: chunk.chunkStart,
-          chunkEnd: chunk.chunkEnd,
-        },
+      batch.forEach((chunk, index) => {
+        chunksToInsert.push({
+          source: command.input,
+          content: chunk.content,
+          embedding: vectors[index],
+          metadata: {
+            ...command.metadata,
+            chunkIndex: chunk.chunkIndex,
+            chunkCount: chunk.chunkCount,
+            chunkStart: chunk.chunkStart,
+            chunkEnd: chunk.chunkEnd,
+          },
+        });
+
+        processed += 1;
+        progress.update(processed, chunks.length);
       });
-
-      processed += 1;
-      progress.update(processed, chunks.length);
     }
 
     if (command.dryRun) {
@@ -71,4 +77,25 @@ export class IndexDocumentUseCase {
       ids,
     };
   }
+}
+
+async function embedBatch(client: EmbeddingClient, inputs: string[]): Promise<number[][]> {
+  const vectors: number[][] = [];
+
+  if (client.embedMany) {
+    vectors.push(...(await client.embedMany(inputs)));
+  } else {
+    for (const input of inputs) {
+      vectors.push(await client.embed(input));
+    }
+  }
+  if (vectors.length !== inputs.length || !vectors.every(isValidVector)) {
+    throw new Error('Invalid embedding batch: expected one non-empty finite vector per input');
+  }
+
+  return vectors;
+}
+
+function isValidVector(vector: number[]): boolean {
+  return Array.isArray(vector) && vector.length > 0 && vector.every(Number.isFinite);
 }

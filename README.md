@@ -32,6 +32,12 @@ RAG_CLI_EMBEDDING_DIMENSIONS=1024
 ```
 
 The configured model must be available in Ollama (for example, run `ollama pull bge-m3`).
+Indexing sends sequential batches of at most 8 chunks to Ollama's `/api/embed`
+endpoint. Other providers retain sequential single-input requests, including
+`POST /embedding`. Search continues to use a single query embedding. Batch results
+must contain one non-empty, finite vector per input, in input order. Embedding
+failures write no partial document and leave the previous indexed version intact.
+See [batching measurements](docs/embedding-batching.md) for local benchmark results.
 Requests use the configured URL unchanged. Ollama requests send `model` and `input`
 and read the first vector from `embeddings`; llama.cpp request and response formats
 remain supported.

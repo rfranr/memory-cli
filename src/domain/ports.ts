@@ -2,6 +2,7 @@ import type { DocumentChunk, DocumentStats, FindResult, SearchMatch } from './en
 
 export interface EmbeddingClient {
   embed(input: string): Promise<number[]>;
+  embedMany?(inputs: string[]): Promise<number[][]>;
 }
 
 export interface VectorStore {
