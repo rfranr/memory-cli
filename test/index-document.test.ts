@@ -26,7 +26,9 @@ function makeVectorStore() {
 
       return records.length;
     }),
-    addMany: vi.fn(async (chunks: DocumentChunk[]) => {
+    addMany: vi.fn(),
+    isDocumentCurrent: vi.fn(async () => false),
+    replaceDocument: vi.fn(async (_identity: string, _hash: string, chunks: DocumentChunk[]) => {
       const ids: number[] = [];
 
       for (const chunk of chunks) {
@@ -59,7 +61,7 @@ describe('IndexDocumentUseCase', () => {
     // Default chunking merges small paragraphs into a larger chunk.
     expect(result).toEqual({ chunks: 1, ids: [1] });
     expect(embeddings.embed).toHaveBeenCalledTimes(1);
-    expect(store.addMany).toHaveBeenCalledTimes(1);
+    expect(store.replaceDocument).toHaveBeenCalledTimes(1);
     expect(embeddings.inputs).toEqual([input]);
 
     expect(storeRecords[0]).toMatchObject({
@@ -86,7 +88,7 @@ describe('IndexDocumentUseCase', () => {
     expect(preview.dryRun).toBe(true);
     expect(preview.chunks).toBeGreaterThan(1);
     expect(preview.ids).toEqual([]);
-    expect(store.addMany).not.toHaveBeenCalled();
+    expect(store.replaceDocument).not.toHaveBeenCalled();
     expect(store.add).not.toHaveBeenCalled();
     await useCase.execute(command);
     expect(preview.documents).toEqual(store.records);
@@ -97,6 +99,6 @@ describe('IndexDocumentUseCase', () => {
     const useCase = new IndexDocumentUseCase(makeEmbeddings(), store);
 
     await expect(useCase.execute({ input: '   ', metadata: {}, dryRun: true })).rejects.toThrow('non-empty chunks');
-    expect(store.addMany).not.toHaveBeenCalled();
+    expect(store.replaceDocument).not.toHaveBeenCalled();
   });
 });

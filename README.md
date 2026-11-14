@@ -61,6 +61,18 @@ Example output:
 }
 ```
 
+Repeating `index` for unchanged content returns `{"chunks":0,"ids":[]}` without
+embedding again. Files are identified by their absolute real path (including symlink
+resolution), URLs by their normalized URL, and literal text by its exact value.
+Changed content at the same source atomically replaces its tracked chunks and vectors;
+failed updates preserve the previous version. Metadata-only changes are skipped too.
+Renaming a file or changing literal text creates a new document identity.
+
+Existing chunks from older versions are retained, not automatically adopted or removed.
+The first indexing after upgrading creates a tracked version alongside any legacy
+chunks; subsequent updates replace only that tracked version. Back up existing databases
+before any manual cleanup of legacy duplicates.
+
 Use `index --dry-run` to validate, chunk, and embed the input without opening or
 creating a database. Only the embedding service is required. JSON output includes
 `dryRun: true`, the chunk count, empty `ids`, and prepared `documents` with source,

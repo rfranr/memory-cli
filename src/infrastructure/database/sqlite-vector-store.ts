@@ -61,6 +61,11 @@ export class SqliteVectorStore implements VectorStore {
       );
 
       CREATE INDEX IF NOT EXISTS idx_documents_source ON documents(source);
+      CREATE TABLE IF NOT EXISTS document_versions (
+        identity TEXT PRIMARY KEY,
+        hash TEXT NOT NULL,
+        ids_json TEXT NOT NULL
+      );
     `);
 
     // Keep legacy classification columns and their data intact; never rebuild user tables.
@@ -86,12 +91,46 @@ export class SqliteVectorStore implements VectorStore {
     return id ?? 0;
   }
 
+  async isDocumentCurrent(identity: string, hash: string): Promise<boolean> {
+    const row = await this.ensureDb().get<{ hash: string }>(
+      'SELECT hash FROM document_versions WHERE identity = ?',
+      identity,
+    );
+
+    return row?.hash === hash;
+  }
+
+  async replaceDocument(identity: string, hash: string, chunks: DocumentChunk[]): Promise<number[]> {
+    return this.persist(chunks, { identity, hash });
+  }
+
   async addMany(chunks: DocumentChunk[]): Promise<number[]> {
+    return this.persist(chunks);
+  }
+
+  private async removeVersion(identity: string): Promise<void> {
+    const db = this.ensureDb();
+    const row = await db.get<{ ids_json: string }>(
+      'SELECT ids_json FROM document_versions WHERE identity = ?',
+      identity,
+    );
+
+    for (const id of JSON.parse(row?.ids_json ?? '[]') as number[]) {
+      await db.run('DELETE FROM documents_vec WHERE rowid = ?', id);
+      await db.run('DELETE FROM documents WHERE id = ?', id);
+    }
+  }
+
+  private async persist(chunks: DocumentChunk[], version?: { identity: string; hash: string }): Promise<number[]> {
     const db = this.ensureDb();
     const ids: number[] = [];
 
-    await db.exec('BEGIN');
+    await db.exec('BEGIN IMMEDIATE');
     try {
+      if (version) {
+        await this.removeVersion(version.identity);
+      }
+
       for (const chunk of chunks) {
         const embedding = normalizeEmbedding(chunk.embedding, this.dimensions);
 
@@ -116,6 +155,7 @@ export class SqliteVectorStore implements VectorStore {
         );
       }
 
+      await this.saveVersion(ids, version);
       await db.exec('COMMIT');
 
       return ids;
@@ -123,6 +163,19 @@ export class SqliteVectorStore implements VectorStore {
       await db.exec('ROLLBACK');
       throw error;
     }
+  }
+
+  private async saveVersion(ids: number[], version?: { identity: string; hash: string }): Promise<void> {
+    if (!version) {
+      return;
+    }
+
+    await this.ensureDb().run(
+      'INSERT OR REPLACE INTO document_versions (identity, hash, ids_json) VALUES (?, ?, ?)',
+      version.identity,
+      version.hash,
+      JSON.stringify(ids),
+    );
   }
 
   async search(queryEmbedding: number[], limit: number): Promise<SearchMatch[]> {

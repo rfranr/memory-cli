@@ -1,9 +1,10 @@
+import { createHash } from 'node:crypto';
 import type { IndexDocumentCommand } from '../domain/commands.js';
 import type { DocumentChunk, IndexDocumentResult } from '../domain/entities.js';
 import type { EmbeddingClient, VectorStore } from '../domain/ports.js';
 import { noopProgressReporter, type ProgressReporter } from '../shared/progress.js';
 import { chunkText } from '../shared/chunk-text.js';
-import { readInput } from './read-input.js';
+import { documentIdentity, readInput } from './read-input.js';
 
 export class IndexDocumentUseCase {
   constructor(
@@ -16,6 +17,13 @@ export class IndexDocumentUseCase {
     progress: ProgressReporter = noopProgressReporter,
   ): Promise<IndexDocumentResult> {
     const content = await readInput(command.input);
+    const identity = documentIdentity(command.input);
+    const hash = createHash('sha256').update(content).digest('hex');
+
+    if (!command.dryRun && (await this.store.isDocumentCurrent(identity, hash))) {
+      return { chunks: 0, ids: [] };
+    }
+
     const chunks = chunkText(content);
 
     if (chunks.length === 0) {
@@ -54,7 +62,7 @@ export class IndexDocumentUseCase {
       return { dryRun: true, chunks: chunks.length, ids: [], documents: chunksToInsert };
     }
 
-    const ids = await this.store.addMany(chunksToInsert);
+    const ids = await this.store.replaceDocument(identity, hash, chunksToInsert);
 
     progress.done(chunks.length);
 

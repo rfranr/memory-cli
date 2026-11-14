@@ -1,4 +1,4 @@
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, realpathSync, statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 export async function readInput(input: string): Promise<string> {
@@ -19,6 +19,20 @@ export async function readInput(input: string): Promise<string> {
   }
 
   return input;
+}
+
+export function documentIdentity(input: string): string {
+  const path = resolveReadablePath(input);
+
+  if (path) {
+    return `file:${realpathSync(path)}`;
+  }
+
+  if (isHttpUrl(input)) {
+    return `url:${new URL(input).href}`;
+  }
+
+  return `text:${input}`;
 }
 
 function resolveReadablePath(input: string): string | undefined {
