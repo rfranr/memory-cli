@@ -126,7 +126,10 @@ describe('IndexDocumentUseCase', () => {
     expect(await new SearchDocumentsUseCase(embeddings, store).execute({ text: 'query', limit: 5 })).toEqual([]);
     expect(embeddings.embed).toHaveBeenCalledWith('query');
     expect(embeddings.embedMany).not.toHaveBeenCalled();
-    expect(store.search).toHaveBeenCalledWith([1, 0], 5);
+    expect(store.search).toHaveBeenCalledWith([1, 0], 5, undefined);
+
+    await new SearchDocumentsUseCase(embeddings, store).execute({ text: 'query', limit: 5, project: 'reversi' });
+    expect(store.search).toHaveBeenLastCalledWith([1, 0], 5, 'reversi');
   });
 
   it('indexes each chunk independently and returns chunk ids', async () => {

@@ -7,6 +7,7 @@ export interface IndexDocumentCommand {
 }
 
 export interface SearchCommand {
+  project?: string;
   text: string;
   limit: number;
 }

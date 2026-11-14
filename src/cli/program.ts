@@ -17,7 +17,7 @@ export interface CliApp {
   memoryForget?(id: string): Promise<unknown>;
   stats(): Promise<unknown>;
   find(command: { file?: string; text?: string; limit: number; offset: number }): Promise<unknown>;
-  search(command: { text: string; limit: number }): Promise<unknown>;
+  search(command: { text: string; limit: number; project?: string }): Promise<unknown>;
 }
 
 export type AppFactory = (options: CommonOptions) => Promise<CliApp> | CliApp;
@@ -35,6 +35,7 @@ interface FindOptions extends CommonOptions {
 }
 
 interface SearchOptions extends CommonOptions {
+  project?: string;
   limit?: string;
 }
 
@@ -154,10 +155,15 @@ function registerSearchCommands(program: Command, createApp: AppFactory): void {
     .command('search')
     .description('Embed text and return nearest stored occurrences sorted by similarity')
     .argument('<text>', 'Search text')
+    .option('--project <name>', 'Only return records associated with this project')
     .option('-l, --limit <number>', 'Maximum matches', '10')
     .action(async (text: string, options: SearchOptions) => {
       const app = await createApp(resolveCommonOptions(program, options));
-      const matches = await app.search({ text, limit: Number.parseInt(options.limit ?? '10', 10) });
+      const matches = await app.search({
+        text,
+        limit: Number.parseInt(options.limit ?? '10', 10),
+        ...(options.project !== undefined ? { project: options.project } : {}),
+      });
 
       console.log(JSON.stringify(matches, null, 2));
     });

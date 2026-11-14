@@ -319,17 +319,28 @@ export class SqliteVectorStore implements VectorStore {
     }
   }
 
-  async search(queryEmbedding: number[], limit: number): Promise<SearchMatch[]> {
+  async search(queryEmbedding: number[], limit: number, project?: string): Promise<SearchMatch[]> {
     const db = this.ensureDb();
     const normalized = normalizeEmbedding(queryEmbedding, this.dimensions);
 
+    // Restrict eligible vector rowids before sqlite-vec selects nearest neighbors.
+    const projectFilter =
+      project === undefined
+        ? ''
+        : `AND rowid IN (
+            SELECT id FROM documents WHERE json_extract(metadata_json, '$.project') = ?
+            UNION ALL
+            SELECT -sequence FROM memories WHERE project = ?
+          )`;
     const knn = await db.all<Array<{ rowid: number; distance: number }>>(
       `SELECT rowid, distance
        FROM documents_vec
        WHERE embedding MATCH vec_f32(?)
+       ${projectFilter}
        ORDER BY distance ASC
        LIMIT ?`,
       JSON.stringify(normalized),
+      ...(project === undefined ? [] : [project, project]),
       limit,
     );
 

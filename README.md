@@ -19,8 +19,15 @@ memory-cli search "tie-breaking"
 
 All commands return JSON. Use the UUID returned by `remember` as `<id>`.
 Only project scope is supported; a project identifier is required and is never
-inferred from the working directory. Lists are project-isolated; semantic search
-searches all projects and documents in the selected database. Explicit search
+inferred from the working directory. Lists are project-isolated. Semantic search
+without `--project` searches all projects and documents in the selected database.
+Use `memory-cli search "tie-breaking" --project reversi --limit 5` to search only
+explicit memories and indexed documents associated with `reversi`. Documents must
+have an exact, case-sensitive top-level `metadata.project` value (set at indexing
+with `--metadata '{"project":"reversi"}'`); records without project metadata are
+excluded. Project filtering happens before nearest-neighbor selection, so `--limit`
+applies to matching records only. This is a retrieval filter, not access control.
+Explicit search
 results carry `metadata.kind: "explicit"`, `memoryId`, `scope`, and `project`.
 
 Memories preserve Unicode, multiline content, creation time and identity on update.
