@@ -33,17 +33,31 @@ export class HttpEmbeddingClient implements EmbeddingClient {
   }
 
   private async request(input: string | string[]): Promise<unknown> {
-    const response = await fetch(this.endpoint, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(this.provider === 'ollama' ? { model: this.model, input } : { input, text: input }),
-    });
+    const response = await this.fetchEmbedding(input);
 
     if (!response.ok) {
-      throw new Error(`Embedding request failed: ${response.status} ${response.statusText}`);
+      const detail = await response.text();
+
+      throw new Error(`Embedding request failed: ${response.status} ${response.statusText}: ${detail}`);
     }
 
     return response.json();
+  }
+
+  private async fetchEmbedding(input: string | string[]): Promise<Response> {
+    try {
+      return await fetch(this.endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(this.provider === 'ollama' ? { model: this.model, input } : { input, text: input }),
+      });
+    } catch (cause) {
+      throw new Error(
+        `Cannot reach embedding service at ${this.endpoint}. Ensure the service is running` +
+          ' (for Ollama, start Ollama separately).',
+        { cause },
+      );
+    }
   }
 
   async embed(input: string): Promise<number[]> {

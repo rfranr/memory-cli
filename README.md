@@ -4,7 +4,60 @@ Local CLI for document indexing and semantic search using embeddings.
 
 Documents → Chunks → Embeddings → Vector Store → Search
 
-## Setup
+## Install the packaged CLI
+
+Requires Node.js 20 or newer. Build a local tarball (nothing is published):
+
+```bash
+pnpm install
+npm pack
+# In a separate consumer project:
+npm install /absolute/path/to/rfranr-memory-cli-1.0.0.tgz
+```
+
+The package contains compiled ESM JavaScript and runtime dependencies only; no
+TypeScript loader, source checkout, Pi, or other agent is needed. The executable
+is `memory-cli` (`rag-cli` remains an alias). From any working directory, use the
+absolute path to the consumer's `node_modules/.bin/memory-cli`, or add that
+consumer's `node_modules/.bin` to `PATH`:
+
+```bash
+export PATH="/absolute/path/to/consumer/node_modules/.bin:$PATH"
+export RAG_CLI_EMBEDDING_PROVIDER=ollama
+export RAG_CLI_EMBEDDING_URL=http://localhost:11434/api/embed
+export RAG_CLI_EMBEDDING_MODEL=bge-m3
+export RAG_CLI_EMBEDDING_DIMENSIONS=1024
+cd /tmp
+memory-cli index 'A document to remember'
+memory-cli search 'remember'
+memory-cli find --text 'document'
+memory-cli stats
+```
+
+Ollama is an external service: install/start it and pull the configured model
+separately. This package does not bundle or start it. Model/provider/dimension
+metadata mismatches are rejected; choose a separate database to change models.
+
+Without `--db` or `RAG_CLI_DB`, the database defaults to:
+
+- Linux: `$XDG_DATA_HOME/memory-cli/rag.sqlite` (absolute XDG path only), or
+  `~/.local/share/memory-cli/rag.sqlite`.
+- macOS: `~/Library/Application Support/memory-cli/rag.sqlite`.
+- Windows: `%LOCALAPPDATA%/memory-cli/rag.sqlite` (home-directory fallback).
+
+Parent directories are created automatically. Existing repository databases are
+not discovered, overwritten, or migrated: pass `--db /path/to/existing.sqlite`
+or set `RAG_CLI_DB` to keep using one. Relative input and database paths are
+relative to the caller's working directory. Existing `INIT_CWD` file fallback is
+retained for package-manager invocations. Environment variables take precedence
+over the caller's `.env`; `--env-file /absolute/path/to/.env` selects another file.
+Export configuration to use the same settings across directories.
+
+`sqlite3` and `sqlite-vec` require native platform binaries. Unsupported platforms
+may need a compiler/Python toolchain for sqlite3 and a supported sqlite-vec binary;
+installation is not guaranteed on every OS/architecture.
+
+## Source development setup
 
 Install dependencies:
 

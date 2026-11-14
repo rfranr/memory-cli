@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
+import { homedir } from 'node:os';
 
 export interface AppConfig {
   databasePath: string;
@@ -31,12 +32,29 @@ export function buildConfig(options: ConfigOptions): AppConfig {
   }
 
   return {
-    databasePath: configValue(options.db, 'RAG_CLI_DB', './rag.sqlite'),
+    databasePath: configValue(options.db, 'RAG_CLI_DB', defaultDatabasePath()),
     embeddingEndpoint: configValue(options.embeddingUrl, 'RAG_CLI_EMBEDDING_URL', 'http://localhost:3000/embedding'),
     embeddingProvider: configValue(options.embeddingProvider, 'RAG_CLI_EMBEDDING_PROVIDER', 'unknown'),
     embeddingModel: configValue(options.embeddingModel, 'RAG_CLI_EMBEDDING_MODEL', 'unknown'),
     embeddingDimensions,
   };
+}
+
+export function defaultDatabasePath(): string {
+  const home = homedir();
+
+  if (process.platform === 'win32') {
+    return join(process.env.LOCALAPPDATA || join(home, 'AppData', 'Local'), 'memory-cli', 'rag.sqlite');
+  }
+
+  if (process.platform === 'darwin') {
+    return join(home, 'Library', 'Application Support', 'memory-cli', 'rag.sqlite');
+  }
+
+  const xdg = process.env.XDG_DATA_HOME;
+  const dataHome = xdg && isAbsolute(xdg) ? xdg : join(home, '.local', 'share');
+
+  return join(dataHome, 'memory-cli', 'rag.sqlite');
 }
 
 function configValue(value: string | undefined, variable: string, fallback: string): string {

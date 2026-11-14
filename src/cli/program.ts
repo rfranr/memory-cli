@@ -36,7 +36,7 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
   const program = new Command();
 
   program
-    .name('rag-cli')
+    .name('memory-cli')
     .description('Index content and search nearest occurrences using embeddings')
     .version('1.0.0')
     .option('--db <path>', 'SQLite documents database path')

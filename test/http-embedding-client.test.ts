@@ -4,6 +4,23 @@ import { HttpEmbeddingClient } from '../src/infrastructure/embedding/http-embedd
 afterEach(() => vi.unstubAllGlobals());
 
 describe('HttpEmbeddingClient', () => {
+  it('explains connection failures', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
+    await expect(new HttpEmbeddingClient('http://localhost:1/api/embed', 'ollama').embed('a')).rejects.toThrow(
+      'Cannot reach embedding service at http://localhost:1/api/embed',
+    );
+  });
+
+  it('includes the missing Ollama model error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('model missing-model not found', { status: 404 })),
+    );
+    await expect(
+      new HttpEmbeddingClient('http://localhost/api/embed', 'ollama', 'missing-model').embed('a'),
+    ).rejects.toThrow('model missing-model not found');
+  });
+
   it('sends an Ollama array and preserves all embedding positions', async () => {
     const fetchMock = vi.fn(async () =>
       Response.json({

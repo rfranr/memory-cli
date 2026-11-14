@@ -1,3 +1,5 @@
+import { mkdir } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 import sqlite3 from 'sqlite3';
 import { open, type Database } from 'sqlite';
 import { load as loadSqliteVec } from 'sqlite-vec';
@@ -48,6 +50,10 @@ export class SqliteVectorStore implements VectorStore {
   ) {}
 
   async init(): Promise<void> {
+    if (this.filename !== ':memory:') {
+      await mkdir(dirname(resolve(this.filename)), { recursive: true });
+    }
+
     this.db = await open({ filename: this.filename, driver: sqlite3.Database });
 
     await this.db.exec(`
