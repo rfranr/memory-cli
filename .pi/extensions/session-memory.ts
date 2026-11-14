@@ -1,14 +1,6 @@
-
-import type { ExtensionAPI } from '@mariozechner/pi-coding-agent';
+import type { ExtensionAPI, ExtensionContext } from '@mariozechner/pi-coding-agent';
 import { spawn } from 'node:child_process';
-import {
-  closeSync,
-  existsSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 
@@ -27,38 +19,47 @@ type PiRecord = {
   message?: PiMessage;
 };
 
+function messageText(content: PiMessage['content']): string {
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  return (content ?? [])
+    .filter((part) => part.type === 'text')
+    .map((part) => part.text ?? '')
+    .join('\n');
+}
+
+function conversationRecord(record: PiRecord): boolean {
+  return record.type === 'message' && (record.message?.role === 'user' || record.message?.role === 'assistant');
+}
+
+function formatRecord(record: PiRecord): string {
+  const role = record.message?.role;
+
+  return `[${record.timestamp ?? 'unknown'}] ${role?.toUpperCase()} (id: ${record.id ?? 'unknown'})`;
+}
+
 function extractConversation(sessionFile: string): string {
   const raw = readFileSync(sessionFile, 'utf8');
   const output: string[] = [`SOURCE: ${sessionFile}`];
 
-  for (const line of raw.split('\n')) {
-    if (!line.trim()) continue;
+  const records = raw
+    .split('\n')
+    .filter((line) => line.trim())
+    .map((line) => JSON.parse(line) as PiRecord);
 
-    const record = JSON.parse(line) as PiRecord;
-    if (record.type !== 'message') continue;
+  for (const record of records.filter(conversationRecord)) {
+    const text = messageText(record.message?.content);
 
-    const role = record.message?.role;
-    if (role !== 'user' && role !== 'assistant') continue;
+    if (!text.trim()) {
+      continue;
+    }
 
-    const content = record.message?.content;
-    const text =
-      typeof content === 'string'
-        ? content
-        : (content ?? [])
-            .filter((part) => part.type === 'text')
-            .map((part) => part.text ?? '')
-            .join('\n');
-
-    if (!text.trim()) continue;
-
-    output.push(
-      '',
-      `[${record.timestamp ?? 'unknown'}] ${role.toUpperCase()} (id: ${record.id ?? 'unknown'})`,
-      text,
-    );
+    output.push('', formatRecord(record), text);
   }
 
-  return output.join('\n');
+  return output.length > 1 ? output.join('\n') : '';
 }
 
 function resolveMemoryCli(projectRoot: string) {
@@ -77,80 +78,96 @@ function resolveMemoryCli(projectRoot: string) {
   return null;
 }
 
-export default function (pi: ExtensionAPI) {
-  pi.on('session_start', (event, ctx) => {
-    if (event.reason !== 'new' || !event.previousSessionFile) {
-      return;
-    }
+const inFlight = new Map<string, Promise<void>>();
 
-    const sessionFile = event.previousSessionFile;
-    const projectRoot = ctx.cwd;
+async function indexSession(sessionFile: string, projectRoot: string): Promise<void> {
+  if (!existsSync(sessionFile)) {
+    return;
+  }
+  const cleanText = extractConversation(sessionFile);
 
-    if (!existsSync(sessionFile)) {
-      return; // Sessió sense fitxer persistent
-    }
+  if (!cleanText) {
+    return;
+  }
 
-    const cli = resolveMemoryCli(projectRoot);
+  const cli = resolveMemoryCli(projectRoot);
 
-    if (!cli) {
-      console.warn('Session memory skipped: memory-cli unavailable');
-      return;
-    }
+  if (!cli) {
+    throw new Error('memory-cli unavailable (install it in the project or build memory-cli)');
+  }
 
-    try {
-      const cleanText = extractConversation(sessionFile);
+  mkdirSync(OUTPUT_DIR, { recursive: true });
+  const outputFile = join(OUTPUT_DIR, `${basename(sessionFile, '.jsonl')}.txt`);
 
-      mkdirSync(OUTPUT_DIR, { recursive: true });
+  writeFileSync(outputFile, cleanText, 'utf8');
+  const log = openSync(LOG_FILE, 'a');
 
-      const outputFile = join(
-        OUTPUT_DIR,
-        `${basename(sessionFile, '.jsonl')}.txt`,
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn(
+        cli.command,
+        [
+          ...cli.args,
+          'index',
+          outputFile,
+          '--metadata',
+          JSON.stringify({
+            type: 'session',
+            project: basename(projectRoot),
+            originalSession: sessionFile,
+          }),
+        ],
+        { cwd: projectRoot, env: process.env, stdio: ['ignore', log, log] },
       );
 
-      writeFileSync(outputFile, cleanText, 'utf8');
+      child.once('error', reject);
+      child.once('close', (code, signal) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`memory-cli exited with ${signal ?? code}; check CLI/Ollama configuration and ${LOG_FILE}`));
+        }
+      });
+    });
+  } finally {
+    closeSync(log);
+  }
+}
 
-      const log = openSync(LOG_FILE, 'a');
+async function rememberSession(sessionFile: string | undefined, ctx: ExtensionContext) {
+  if (!sessionFile) {
+    return;
+  }
+  const existing = inFlight.get(sessionFile);
 
-      try {
-        const child = spawn(
-          cli.command,
-          [
-            ...cli.args,
-            'index',
-            outputFile,
-            '--metadata',
-            JSON.stringify({
-              type: 'session',
-              project: basename(projectRoot),
-              originalSession: sessionFile,
-            }),
-          ],
-          {
-            cwd: projectRoot,
-            env: process.env,
-            stdio: ['ignore', log, log],
-          },
-        );
+  if (existing) {
+    return existing;
+  }
+  const operation = indexSession(sessionFile, ctx.cwd).catch((error: unknown) => {
+    const message = `Session memory indexing failed: ${String(error)}`;
 
-        child.on('error', (error) => {
-          console.error('Session memory indexing failed:', error);
-        });
+    console.error(message);
+    ctx.ui.notify(message, 'error');
+  });
 
-        child.on('exit', (code) => {
-          if (code !== 0) {
-            console.error(`Session memory indexing exited: ${code}`);
-          }
-        });
+  inFlight.set(sessionFile, operation);
+  try {
+    await operation;
+  } finally {
+    inFlight.delete(sessionFile);
+  }
+}
 
-        child.unref();
-
-        ctx.ui.notify('Session memory indexing launched', 'info');
-      } finally {
-        closeSync(log);
-      }
-    } catch (error) {
-      console.error('Session memory preparation failed:', error);
-      ctx.ui.notify('Session memory preparation failed', 'error');
+export default function (pi: ExtensionAPI) {
+  pi.on('session_start', async (event, ctx) => {
+    if (event.reason === 'new') {
+      await rememberSession(event.previousSessionFile, ctx);
+    }
+  });
+  pi.on('session_shutdown', async (event, ctx) => {
+    // Reload and replacement shutdowns must not index the current session.
+    if (event.reason === 'quit') {
+      await rememberSession(ctx.sessionManager.getSessionFile(), ctx);
     }
   });
 }
