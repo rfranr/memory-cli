@@ -77,7 +77,9 @@ export function loadEnvFile(envFile = '.env'): void {
   const variables = parseEnvFile(readFileSync(absolutePath, 'utf8'));
 
   for (const [key, value] of Object.entries(variables)) {
-    process.env[key] ??= value;
+    if (key.startsWith('RAG_CLI_')) {
+      process.env[key] ??= value;
+    }
   }
 }
 
