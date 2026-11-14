@@ -7,3 +7,5 @@ categories.*.yml
 .env
 .env.*
 !.env.example
+
+/metrics.html
