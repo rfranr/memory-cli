@@ -75,7 +75,7 @@ function resolveMemoryCli(projectRoot: string) {
     return { command: process.execPath, args: [ownCli] };
   }
 
-  return null;
+  return { command: 'memory-cli', args: [] as string[] };
 }
 
 const inFlight = new Map<string, Promise<void>>();
@@ -91,10 +91,6 @@ async function indexSession(sessionFile: string, projectRoot: string): Promise<v
   }
 
   const cli = resolveMemoryCli(projectRoot);
-
-  if (!cli) {
-    throw new Error('memory-cli unavailable (install it in the project or build memory-cli)');
-  }
 
   mkdirSync(OUTPUT_DIR, { recursive: true });
   const outputFile = join(OUTPUT_DIR, `${basename(sessionFile, '.jsonl')}.txt`);

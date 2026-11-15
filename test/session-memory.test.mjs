@@ -109,14 +109,31 @@ it('shares concurrent indexing and reports nonzero CLI failures', async () => {
   expect(mocks.closeSync).toHaveBeenCalledWith(42);
 });
 
-it('reports unavailable CLI and spawn errors without rejecting shutdown', async () => {
-  mocks.existsSync.mockImplementation((path) => path === '/session.jsonl');
-  await handlers.session_shutdown({ reason: 'quit' }, ctx);
-  expect(ctx.ui.notify).toHaveBeenCalledWith(expect.stringContaining('memory-cli unavailable'), 'error');
-  mocks.existsSync.mockReturnValue(true);
+it('reports spawn errors without rejecting shutdown', async () => {
   const pending = handlers.session_shutdown({ reason: 'quit' }, ctx);
 
   child.emit('error', new Error('ENOENT'));
   await pending;
   expect(ctx.ui.notify).toHaveBeenLastCalledWith(expect.stringContaining('ENOENT'), 'error');
+});
+
+it.each([
+  ['/work/memory-cli', '/work/memory-cli/dist/index.js', process.execPath],
+  ['/work/demo', null, 'memory-cli'],
+])('resolves the CLI for %s and delegates configuration unchanged', async (cwd, builtCli, command) => {
+  ctx.cwd = cwd;
+  mocks.existsSync.mockImplementation((path) => path === '/session.jsonl' || path === builtCli);
+
+  const pending = handlers.session_shutdown({ reason: 'quit' }, ctx);
+
+  expect(mocks.spawn.mock.calls[0][0]).toBe(command);
+  expect(mocks.spawn.mock.calls[0][2]).toMatchObject({ cwd, env: process.env });
+  expect(mocks.spawn.mock.calls[0][1]).not.toContain('--db');
+
+  if (builtCli) {
+    expect(mocks.spawn.mock.calls[0][1][0]).toBe(builtCli);
+  }
+
+  child.emit('close', 0, null);
+  await pending;
 });

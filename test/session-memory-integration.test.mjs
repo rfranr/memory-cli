@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:http';
@@ -33,6 +33,15 @@ it('indexes new and quit via the real CLI, reuses unchanged embeddings, and hand
       RAG_CLI_EMBEDDING_MODEL: 'test',
       RAG_CLI_EMBEDDING_DIMENSIONS: '2',
     });
+    // Both session capture and explicit CLI operations must load the project's .env.
+    writeFileSync(join(dir, '.env'), `RAG_CLI_DB=${process.env.RAG_CLI_DB}\n`);
+    delete process.env.RAG_CLI_DB;
+    mkdirSync(join(dir, 'node_modules/.bin'), { recursive: true });
+    writeFileSync(
+      join(dir, 'node_modules/.bin/memory-cli'),
+      `#!/bin/sh\nexec "${process.execPath}" "${join(process.cwd(), 'dist/index.js')}" "$@"\n`,
+      { mode: 0o755 },
+    );
     const source = readFileSync('.pi/extensions/session-memory.ts', 'utf8');
     const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
     const { default: extension } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
@@ -40,7 +49,7 @@ it('indexes new and quit via the real CLI, reuses unchanged embeddings, and hand
     const diagnostics = [];
     const session = join(dir, 'session.jsonl');
     const ctx = {
-      cwd: process.cwd(),
+      cwd: dir,
       sessionManager: { getSessionFile: () => session },
       ui: { notify: (message) => diagnostics.push(message) },
     };
