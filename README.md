@@ -17,7 +17,7 @@ memory-cli memories forget <id>
 memory-cli search "tie-breaking"
 ```
 
-All commands return JSON. Use the UUID returned by `remember` as `<id>`.
+Memory commands return JSON. Use the UUID returned by `remember` as `<id>`.
 Only project scope is supported; a project identifier is required and is never
 inferred from the working directory. Lists are project-isolated. Semantic search
 without `--project` searches all projects and documents in the selected database.
@@ -37,6 +37,87 @@ replace the embedding atomically after successful embedding generation. Memories
 use the configured database and embedding model; incompatible index configuration
 is rejected. Document indexing never creates memories, and `forget --source`
 remains document-only. Global options such as `--db` apply to these commands too.
+
+## Inspect inventory and activity
+
+```bash
+memory-cli dashboard
+memory-cli dashboard --project reversi
+memory-cli dashboard --json
+memory-cli stats
+memory-cli traces --limit 30 --project reversi
+memory-cli traces --operation search --since 2026-01-01T00:00:00Z --json
+memory-cli traces --follow
+memory-cli traces --cleanup-before 2026-01-01T00:00:00Z
+```
+
+The dashboard is a read-only snapshot: run it again to refresh. It adapts to terminal
+width, colors its heading only on a TTY, and respects `NO_COLOR`. JSON never contains
+ANSI formatting. `stats` preserves `documentsDb` and `documents` and adds an
+`observability` object. `dashboard --json` returns that object's project-filtered
+inventory. `traces --json` emits one event per line (also with `--follow`); follow
+polls every second, printing only new sequence numbers. Stop with Ctrl-C. Trace
+filters accept exact project/operation names and inclusive ISO `--since`/`--until`.
+Limits must be positive integers (maximum 10,000).
+
+Example dashboard:
+
+```text
+MEMORY · local overview
+────────────────────────────────────────
+Memories 12 · Sessions 4
+Documents 9 · Chunks 48
+
+ACTIVITY · last 24h
+Reads 18 · Writes 5 · Failures 1
+Average 84ms
+```
+
+### Local traces and attribution
+
+Operations recorded: `search`, `remember`, `memories update`, `memories forget`,
+`index`, and `forget --source`. Dry runs are not recorded. Events live in
+`operation_traces` in the same SQLite database, with an increasing `sequence`, UUID
+`id`, UTC `timestamp`, `operation`, `status` (`success`/`failure`), nullable `project`,
+`actor`, nullable `session`, `durationMs`, `count`, and `memoryIds` (explicit UUIDs).
+Counts describe search results, indexed chunks, or explicit memory mutation requests;
+source deletion counts are measured before deletion when available (`null` otherwise). Repeated explicit forget requests
+can succeed without removing a record. Failed operations have count zero.
+Directory indexing produces one aggregate event. Failures do not include error
+messages: these can contain private input. CLI argument parsing failures occur
+before application instrumentation and are not traced.
+
+Set context explicitly in the invoking process:
+
+```bash
+MEMORY_CLI_ACTOR=my-agent MEMORY_CLI_SESSION=session-42 \
+  memory-cli search "tie-breaking" --project reversi
+```
+
+Without context, actor is `unknown` and session is `null`; CLI invocation does not
+imply Pi. Project comes from the command/index metadata or the existing explicit
+memory for update/forget; source deletion uses matching document metadata when it identifies a single project. An unfiltered search has no project attribution even if
+its results span projects. The Pi session-indexing extension supplies actor `pi`
+and the session file basename (without `.jsonl`) as session context. The CLI does
+not depend on Pi.
+
+Traces never contain queries, prompts, contents, embeddings, or error text. Treat
+project, actor and session identifiers as public labels: do not supply secrets in
+them. Telemetry write failures do not change primary operation results. Traces
+retain at most the latest 10,000 events automatically; cleanup deletes only traces,
+never memories or documents. There is no external telemetry service.
+
+Statistics show inventory, per-project memory/chunk/activity counts, last-24-hour
+reads/writes, successes/failures and average duration, recent operations, failures
+and operations taking at least one second. Episodic sessions are distinct
+`originalSession` metadata values on documents with `type: session`. Documents
+are distinct stored sources; chunks are document rows, excluding explicit memories.
+Frequently retrieved and never-retrieved explicit memories are based only on
+retained successful search events, not lifetime usage or confirmed usefulness.
+Historical operations before instrumentation are unknown. Inventory is current;
+activity is bounded by retention. Dashboard sections truncate long lines in narrow
+terminals; use JSON for complete identifiers. Live dashboard refresh, navigation,
+error diagnostics and lifetime counters are deferred.
 
 ## Install the packaged CLI
 

@@ -47,6 +47,8 @@ describe('CLI commands', () => {
 
     expect(program.commands.map((command) => command.name())).toEqual([
       'forget',
+      'dashboard',
+      'traces',
       'remember',
       'memories',
       'index',

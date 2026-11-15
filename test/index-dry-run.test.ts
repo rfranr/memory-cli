@@ -38,7 +38,7 @@ it('indexes and searches without initialization; dry run never changes database 
       metadata: { url: command.metadata.url, chunkIndex: 0, chunkCount: 1, chunkStart: 0, chunkEnd: 7 },
       score: 1,
     });
-    expect(await app.stats()).toEqual({
+    expect(await app.stats()).toMatchObject({
       documentsDb: config.databasePath,
       documents: { chunks: 1, sources: 1 },
     });

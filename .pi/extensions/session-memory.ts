@@ -113,7 +113,11 @@ async function indexSession(sessionFile: string, projectRoot: string): Promise<v
             originalSession: sessionFile,
           }),
         ],
-        { cwd: projectRoot, env: process.env, stdio: ['ignore', log, log] },
+        {
+          cwd: projectRoot,
+          env: { ...process.env, MEMORY_CLI_ACTOR: 'pi', MEMORY_CLI_SESSION: basename(sessionFile, '.jsonl') },
+          stdio: ['ignore', log, log],
+        },
       );
 
       child.once('error', reject);

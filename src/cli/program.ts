@@ -1,3 +1,4 @@
+import { registerInspection, type InspectionApp } from './observability.js';
 import { Command } from 'commander';
 import type { Metadata } from '../domain/entities.js';
 
@@ -60,6 +61,10 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
       console.log(JSON.stringify(await app.forget!(options.source), null, 2));
     });
 
+  registerInspection(
+    program,
+    async () => (await createApp(resolveCommonOptions(program, {}))) as unknown as InspectionApp,
+  );
   registerMemoryCommands(program, createApp);
   registerDocumentCommands(program, createApp);
   registerSearchCommands(program, createApp);
