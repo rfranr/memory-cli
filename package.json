@@ -7,7 +7,7 @@
     "memory-cli": "dist/index.js",
     "rag-cli": "dist/index.js"
   },
-  "files": ["dist"],
+  "files": ["dist", ".pi/skills/agent-memory", ".pi/extensions/session-memory.ts"],
   "engines": { "node": ">=20" },
   "repository": { "type": "git", "url": "https://github.com/rfranr/memory-cli.git" },
   "publishConfig": { "access": "public" },
@@ -16,6 +16,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node --loader ts-node/esm src/index.ts",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "test:package": "node --test test/package-install.mjs",
     "test": "tsc -p tsconfig.json --noEmit && vitest run"
   },
   "keywords": [],

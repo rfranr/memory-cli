@@ -1,5 +1,6 @@
 import { registerInspection, type InspectionApp } from './observability.js';
 import { Command } from 'commander';
+import { registerPiSetup } from './setup-pi.js';
 import type { Metadata } from '../domain/entities.js';
 
 export interface CommonOptions {
@@ -65,6 +66,7 @@ export function buildProgram(createApp: AppFactory = defaultCreateApp): Command 
     program,
     async () => (await createApp(resolveCommonOptions(program, {}))) as unknown as InspectionApp,
   );
+  registerPiSetup(program);
   registerMemoryCommands(program, createApp);
   registerDocumentCommands(program, createApp);
   registerSearchCommands(program, createApp);

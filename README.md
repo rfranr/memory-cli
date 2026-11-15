@@ -4,6 +4,39 @@ Local CLI for document indexing and semantic search using embeddings.
 
 Documents → Chunks → Embeddings → Vector Store → Search
 
+## Install in another project (optional Pi integration)
+
+From the consumer project root (for example, `agentic-dev-scorch-poc`):
+
+```bash
+npm install @rfranr/memory-cli
+npx --no-install memory-cli setup pi --dry-run
+npx --no-install memory-cli setup pi
+npx --no-install memory-cli setup pi --check
+```
+
+For an unpublished build, run `npm pack` in this repository and install the resulting
+`.tgz` instead of the package name. No global installation or source checkout is
+needed by the consumer. The core CLI does not depend on Pi.
+
+Setup copies the bundled Skill into `.pi/skills/agent-memory/` and the extension into
+`.pi/extensions/session-memory.ts`. Start (or restart) Pi from this project root.
+Identical files are left alone; differing files require interactive confirmation
+(default: no), and non-interactive runs preserve them. Other Skills, extensions and
+Pi configuration are untouched. Dry runs never write or prompt.
+
+`--check` exits 0 when all bundled resource paths exist and the project-local CLI
+executes, or 1 otherwise. It does not compare customized contents, launch Pi, open a
+database, or contact the embedding server. Setup also needs neither Pi nor an LLM.
+The installed extension uses `node_modules/.bin/memory-cli` in Pi's initial working
+directory. Keep the npm dependency installed. Configure the database and embedding
+endpoint as below before using memory; actual recall and capture require embeddings.
+Session capture can retain private conversation content; see the
+[Pi integration instructions](.pi/skills/agent-memory/pi.md).
+
+Run `npm run test:package` to build a real tarball and verify installation in an
+isolated temporary consumer (npm dependency installation may require network access).
+
 ## Explicit project memories
 
 Save selected long-term context separately from indexed documents, manually or through an autonomous agent:

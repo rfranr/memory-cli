@@ -49,6 +49,7 @@ describe('CLI commands', () => {
       'forget',
       'dashboard',
       'traces',
+      'setup',
       'remember',
       'memories',
       'index',
