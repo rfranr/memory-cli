@@ -6,7 +6,7 @@ Documents → Chunks → Embeddings → Vector Store → Search
 
 ## Explicit project memories
 
-Save user-selected memories separately from indexed documents:
+Save selected long-term context separately from indexed documents, manually or through an autonomous agent:
 
 ```bash
 memory-cli remember "Preserve deterministic tie-breaking" --scope project --project reversi
@@ -37,6 +37,23 @@ replace the embedding atomically after successful embedding generation. Memories
 use the configured database and embedding model; incompatible index configuration
 is rejected. Document indexing never creates memories, and `forget --source`
 remains document-only. Global options such as `--db` apply to these commands too.
+
+### Autonomous agent memory (Pi)
+
+The [agent-memory Skill](.pi/skills/agent-memory/SKILL.md) guides selective recall,
+remembering and reconciliation across programming, research, planning, writing and
+other tasks, without requiring users to request each memory. Preferences,
+hypotheses and open questions can be retained with uncertainty in ordinary content;
+there is no new schema or classification system.
+
+[Pi setup](.pi/skills/agent-memory/pi.md) keeps executable/configuration details
+separate from that policy. Pi retains its existing `basename(ctx.cwd)` project
+identifier as a memory namespace, even for non-software workspaces. Equal directory
+basenames collide; identifiers and existing data are not migrated. Only project
+scope is supported, not global preferences or cross-namespace recall. The existing
+session extension continues episodic indexing independently of explicit selection.
+See the [manual acceptance scenarios](.pi/skills/agent-memory/acceptance.md) for
+cross-domain behavior checks; automated storage tests do not prove agent judgment.
 
 ## Inspect inventory and activity
 
